@@ -1,16 +1,20 @@
 import {
-  GestureResponderEvent,
-  Text,
+  StyleSheet,
   TouchableOpacity,
+  GestureResponderEvent,
+  ViewStyle,
   TextStyle,
+  Text,
+  Platform,
 } from "react-native";
+import { Colors } from "@/constants/Colors";
 import useCustomFonts from "@/hooks/useCustomFonts";
 
 interface CustomButtonProps {
   title: string;
   onPress: (event: GestureResponderEvent) => void;
-  style?: string; // Sử dụng kiểu string cho lớp tailwind
-  textStyle?: TextStyle; // Thay đổi kiểu thành TextStyle
+  style?: ViewStyle;
+  textStyle?: TextStyle;
   color?: "primary" | "secondary";
   borderRadius?: number;
   shadow?: boolean;
@@ -21,42 +25,54 @@ export default function CustomButton({
   onPress,
   style,
   textStyle,
-  color = "primary", // Mặc định color là "primary"
-  borderRadius = 5,
+  color = "primary",
+  borderRadius = 10,
   shadow = true,
 }: CustomButtonProps) {
-  const { fontsLoaded, error } = useCustomFonts();
+  const { fontsLoaded } = useCustomFonts();
 
   if (!fontsLoaded) {
-    return <Text>Loading...</Text>; // Hoặc bạn có thể xử lý UI khi font chưa tải
+    return null;
   }
 
-  // Màu nền button
-  const buttonColor = color === "primary" ? "bg-[#7AB2D3]" : "bg-[#C0C0C0]";
-  const textColor = "#FFFFFF";
-
-  const borderRadiusClass = borderRadius === 10 ? "rounded-sm" : "rounded-lg";
-
-  const shadowClass = shadow
-    ? "shadow-lg shadow-offset-[0_4px] shadow-opacity-[0.25] shadow-radius-[4px]"
-    : "elevation-6";
+  const buttonColor = color === "primary" ? "#7AB2D3" : "#C0C0C0";
+  const textColor = color === "primary" ? "#FFFFFF" : "#000000";
 
   return (
     <TouchableOpacity
+      style={[
+        styles.button,
+        { backgroundColor: buttonColor, borderRadius: borderRadius },
+        shadow && Platform.OS === "ios" ? styles.shadow : { elevation: 6 },
+        style,
+      ]}
       onPress={onPress}
       activeOpacity={0.7}
-      className={`w-full py-2 px-5 ${buttonColor} ${borderRadiusClass} ${shadowClass} ${style} flex items-center justify-center`}
     >
-      <Text
-        style={{
-          fontFamily: "Poppins_700Bold", // Đảm bảo font Poppins_700Bold đã được tải
-          fontSize: 20,
-          color: textColor, // Màu chữ mặc định là trắng
-          ...textStyle, // Kết hợp với textStyle của người dùng
-        }}
-      >
+      <Text style={[styles.text, { color: textColor }, textStyle]}>
         {title}
       </Text>
     </TouchableOpacity>
   );
 }
+
+const styles = StyleSheet.create({
+  button: {
+    paddingVertical: 5,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+  },
+  text: {
+    fontFamily: "Poppins_700Bold",
+    fontSize: 20,
+  },
+  shadow: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+});

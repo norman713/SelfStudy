@@ -1,12 +1,21 @@
 import LoginInput from "@/components/LoginInput";
 import PasswordInput from "@/components/PasswordInput";
-import { Text, View } from "react-native";
+import {
+  Text,
+  StyleSheet,
+  View,
+  Image,
+  Pressable,
+  GestureResponderEvent,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import useCustomFonts from "@/hooks/useCustomFonts";
 import CustomButton from "@/components/CustomButton";
 import BackButton from "@/components/BackButton";
+import { router } from "expo-router";
 import { useState } from "react";
 import { isValidEmail } from "@/util/validator";
+import { Colors } from "@/constants/Colors";
 
 export default function RegisterScreen() {
   const { fontsLoaded } = useCustomFonts();
@@ -16,35 +25,48 @@ export default function RegisterScreen() {
     password: "",
   });
   const [confirm, setConfirm] = useState("");
+  const [showError, setShowError] = useState(false);
+  const [message, setMessage] = useState({
+    title: "",
+    description: "",
+  });
 
   if (!fontsLoaded) {
     return null;
   }
 
-  const handleRegister = () => {
-    // Validation
+  const handleRegister = async () => {
     if (
       request.username === "" ||
       request.email === "" ||
       request.password === "" ||
       confirm === ""
     ) {
-      alert("All fields are required.");
+      setShowError(true);
+      setMessage({
+        title: "Error",
+        description: "All fields are required.",
+      });
       return;
     }
 
     if (!isValidEmail(request.email)) {
-      alert("Invalid email format.");
+      setShowError(true);
+      setMessage({
+        title: "Error",
+        description: "Invalid email format.",
+      });
       return;
     }
 
     if (request.password !== confirm) {
-      alert("The password and the confirmation password must match.");
+      setShowError(true);
+      setMessage({
+        title: "Error",
+        description: "The password and the confirmation password must match.",
+      });
       return;
     }
-
-    // Registration logic here (e.g., save user, navigate to a different screen, etc.)
-    alert("Registration successful!");
   };
 
   const updateField = (fieldName: keyof typeof request, value: string) => {
@@ -55,45 +77,135 @@ export default function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        paddingHorizontal: 20,
-        gap: 110,
-        backgroundColor: "white",
-      }}
-    >
-      <View className="self-start mt-5">
+    <SafeAreaView style={styles.container}>
+      <View style={styles.backButton}>
         <BackButton />
       </View>
-      <View className="justify-center items-center w-full py-12 px-3">
-        <Text className="font-bold text-3xl mb-10 text-[#7AB2D3] text-center w-full">
-          Register
-        </Text>
-        <View className="flex justify-center items-center w-full gap-5 pb-12">
+      <View style={styles.body}>
+        <Text style={styles.title}>Register</Text>
+        <View style={styles.inputContainer}>
           <LoginInput
             placeholder="Enter username"
-            style={{ width: "100%" }}
+            style={styles.input}
             onChangeText={(text) => updateField("username", text)}
           />
           <LoginInput
             placeholder="Enter email"
-            style={{ width: "100%" }}
+            style={styles.input}
             onChangeText={(text) => updateField("email", text)}
           />
           <PasswordInput
             placeholder="Enter password"
-            style="w-full"
+            style={styles.input}
             onChangeText={(text) => updateField("password", text)}
           />
           <PasswordInput
             placeholder="Confirm password"
-            style="w-full"
+            style={styles.input}
             onChangeText={(text) => setConfirm(text)}
           />
         </View>
-        <CustomButton title="Register" onPress={handleRegister} />
+
+        <CustomButton
+          title="Register"
+          onPress={() => router.push("/Authen/Login")}
+        />
+        <View style={styles.divideContainer}>
+          <View style={styles.divideLine}></View>
+          <Text style={styles.option}>Or</Text>
+          <View style={styles.divideLine}></View>
+        </View>
+        <Pressable style={styles.googleButton}>
+          <Image source={require("../../assets/images/google-icon.png")} />
+          <Text style={styles.googleText}>Login with Google</Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "flex-start",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    backgroundColor: "white",
+  },
+  backButton: {
+    alignSelf: "flex-start",
+    marginTop: 20,
+    marginLeft: 0,
+  },
+  title: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 36,
+    marginTop: 20,
+    marginBottom: 40,
+    color: "#7AB2D3",
+    textAlign: "center",
+    width: "100%",
+  },
+  body: {
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    paddingVertical: 60,
+    paddingHorizontal: 10,
+  },
+  inputContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    gap: 20,
+    paddingBottom: 50,
+  },
+  input: {
+    width: "100%",
+  },
+  registerText: {
+    color: "white",
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 16,
+  },
+  googleButton: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.1)",
+    borderRadius: 10,
+    paddingVertical: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3.5,
+    elevation: 5,
+    width: "100%",
+  },
+  googleText: {
+    fontFamily: "Poppins_400Regular",
+    marginLeft: 5,
+    color: "gray",
+    fontSize: 20,
+  },
+  divideLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "gray",
+  },
+  divideContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+  },
+  option: {
+    marginHorizontal: 5,
+    color: "gray",
+    fontSize: 14,
+  },
+});

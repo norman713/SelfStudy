@@ -1,16 +1,20 @@
 import BackButton from "@/components/BackButton";
 import CustomButton from "@/components/CustomButton";
 import LoginInput from "@/components/LoginInput";
-import { Text, View } from "react-native";
+import { Text, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import useCustomFonts from "@/hooks/useCustomFonts";
 import { router } from "expo-router";
 import { useState } from "react";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function ForgotPassWordScreen() {
   const { fontsLoaded } = useCustomFonts();
   const [email, setEmail] = useState("");
+  const [showError, setShowError] = useState(false);
+  const [message, setMessage] = useState({
+    title: "",
+    description: "",
+  });
 
   if (!fontsLoaded) {
     return null;
@@ -18,51 +22,85 @@ export default function ForgotPassWordScreen() {
 
   const handleSendCode = async () => {
     if (email === "") {
-      alert("The email is empty.");
+      setShowError(true);
+      setMessage({
+        title: "Error",
+        description: "The email is empty.",
+      });
       return;
     }
-
-    // // Giả sử gửi mã thành công mà không gọi API
-    // AsyncStorage.setItem("email", email);
-    // router.push("/Authentication/Verification");
   };
 
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        justifyContent: "flex-start",
-        paddingHorizontal: 20,
-        gap: 110,
-        backgroundColor: "white",
-      }}
-    >
-      <View style={{ alignSelf: "flex-start", marginTop: 20, marginLeft: 0 }}>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.backButtonContainer}>
         <BackButton />
       </View>
-      <View className="justify-center items-center w-full">
-        <Text className="font-bold text-3xl  text-[#7AB2D3] text-center w-full">
-          Forgot password?
-        </Text>
-        <Text
-          className="text-gray-500 text-center mt-2 mb-8"
-          style={{ fontSize: 16 }}
-        >
+      <View style={styles.bottom}>
+        <Text style={styles.title}>Forgot password?</Text>
+        <Text style={styles.instruction}>
           Please enter the email linked with your account
         </Text>
-        <View className="w-full items-center gap-5">
-          <LoginInput
-            placeholder="Enter your email"
-            style={{ width: "100%" }}
-            onChangeText={(text) => setEmail(text)}
-          />
-          <CustomButton
-            title="Send code"
-            style="mt-5"
-            onPress={handleSendCode}
-          />
-        </View>
+      </View>
+      <View style={styles.inputContainer}>
+        <LoginInput
+          placeholder="Enter your email"
+          style={styles.space}
+          onChangeText={(text) => setEmail(text)}
+        />
+        <CustomButton
+          title="Send code"
+          style={styles.sendButton}
+          onPress={() => router.push("/Authen/Verification")}
+        />
       </View>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "flex-start",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    backgroundColor: "white",
+  },
+  backButtonContainer: {
+    alignSelf: "flex-start",
+    marginTop: 20,
+    marginLeft: 10,
+    paddingBottom: 110,
+  },
+  title: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 36,
+    color: "#7AB2D3",
+    textAlign: "center",
+  },
+  bottom: {
+    width: "100%",
+  },
+  instruction: {
+    fontFamily: "Roboto_400Regular",
+    color: "gray",
+    textAlign: "center",
+    marginTop: 10,
+    fontSize: 16,
+    width: "100%",
+    paddingHorizontal: 10,
+  },
+  inputContainer: {
+    width: "100%",
+    marginTop: 30,
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  space: {
+    width: "100%",
+    marginBottom: 10,
+  },
+  sendButton: {
+    marginTop: 20,
+  },
+});

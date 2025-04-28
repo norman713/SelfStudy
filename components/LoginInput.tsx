@@ -1,31 +1,44 @@
-import React from "react";
-import { TextInput, View } from "react-native";
-import { View as NativeView } from "react-native"; // Dùng View từ React Native
+import { View, TextInput, StyleSheet, ViewStyle } from "react-native";
+import { Colors } from "@/constants/Colors";
 
-interface LoginInputProps {
+interface LoginInputPros {
   placeholder: string;
-  style?: object; // Allow Tailwind-like class names as strings
+  style?: ViewStyle;
   onChangeText?: (text: string) => void;
-  editable?: boolean; // To control the editable state
+  editable?: boolean;
 }
 
 export default function LoginInput({
   placeholder,
   style,
   onChangeText,
-  editable = true, // Default to editable
-}: LoginInputProps) {
+  editable = true,
+}: LoginInputPros) {
   return (
-    <View
-      className={`w-full bg-gray-200 ${style}`}
-      style={{ borderRadius: 10 }} // Áp dụng border-radius là 10px
-    >
+    <View style={[styles.container, style]}>
       <TextInput
         placeholder={placeholder}
         onChangeText={onChangeText}
         editable={editable}
-        className="px-3 py-2 text-base" // NativeWind classes for TextInput
+        style={styles.input}
       />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    justifyContent: "center",
+    backgroundColor: Colors.gray,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    width: "100%",
+    height: 40,
+  },
+  input: {
+    height: "100%",
+    textAlignVertical: "center",
+    paddingVertical: 0,
+    fontSize: 16,
+  },
+});
