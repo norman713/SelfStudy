@@ -88,10 +88,7 @@ export default function LoginScreen() {
         <Link style={styles.link} href="/Authen/ForgotPassword">
           Forgot password?
         </Link>
-        <CustomButton
-          title="Login"
-          onPress={() => router.push("/Me/Profile")}
-        />
+        <CustomButton title="Login" onPress={() => router.push("/Me/Plan")} />
         <View style={styles.divideContainer}>
           <View style={styles.divideLine}></View>
           <Text style={styles.option}>Or</Text>
