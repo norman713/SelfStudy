@@ -34,7 +34,7 @@ export default function Plan() {
       id: "1",
       name: "Design mobile UI",
       description: "Create UI wireframes for new app",
-      startDate: "2025-04-29",
+      startDate: "2025-04-30",
       endDate: "2025-05-02",
       notifyBefore: "1",
       status: "In Progress",
@@ -80,6 +80,7 @@ export default function Plan() {
     const todayPlans = mockPlans.filter((plan) => plan.startDate === today);
     setTodayPlanNum(todayPlans.length);
     setSelectDatePlans(todayPlans);
+    // setSelectedDate(today);
   }, []);
 
   useEffect(() => {
