@@ -1,16 +1,5 @@
 import React, { useState } from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  SafeAreaView,
-  StatusBar,
-  TouchableOpacity,
-  TextInput,
-  Platform,
-  ScrollView,
-  GestureResponderEvent,
-} from "react-native";
+import { StyleSheet, View, SafeAreaView, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import CustomButton from "@/components/CustomButton";
 import ToggleTabButton from "@/components/ToggleTabButton";
@@ -19,7 +8,7 @@ import BottomNavBar from "@/components/navigation/ButtonNavBar";
 import { router, useRouter } from "expo-router";
 import TeamItem from "@/components/team/TeamItem";
 import SearchBar from "@/components/SearchBar";
-
+import CreateTeamPopup from "@/components/popup/CreateTeam";
 const mockTeamData = [
   {
     id: 1,
@@ -27,7 +16,6 @@ const mockTeamData = [
     imageSource: {
       uri: "https://www.bigfootdigital.co.uk/wp-content/uploads/2020/07/image-optimisation-scaled.jpg",
     },
-    isAdmin: true,
   },
   {
     id: 2,
@@ -52,11 +40,16 @@ export default function TeamScreen() {
     "joined"
   );
 
-  const [filteredTeams, setFilteredTeams] = useState(mockTeamData);
+  const [allTeams, setAllTeams] = useState(mockTeamData); // Lưu trữ dữ liệu gốc
+  const [filteredTeams, setFilteredTeams] = useState(mockTeamData); // Dữ liệu sau khi lọc
+
+  // Hiển thị team dựa trên filter
   const getVisibleTeams = () => {
     if (activeFilter === "joined") return filteredTeams;
-    return filteredTeams.filter((team) => team.isAdmin);
+    return filteredTeams.filter((team) => team.isAdmin); // Chỉ hiển thị admin
   };
+
+  const [showCreatePopup, setShowCreatePopup] = useState(false);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -103,7 +96,7 @@ export default function TeamScreen() {
             iconLeft={
               <Ionicons name="add-circle-sharp" size={20} color="#fff" />
             }
-            onPress={() => console.log("Pressed")}
+            onPress={() => setShowCreatePopup(true)} // Mở popup khi nhấn
             color="primary"
           />
         </View>
@@ -125,8 +118,31 @@ export default function TeamScreen() {
         </ScrollView>
       </View>
 
+      {/* Popup tạo team */}
+      <CreateTeamPopup
+        visible={showCreatePopup}
+        onClose={() => setShowCreatePopup(false)}
+        onSave={(name, desc) => {
+          // Tạo team mới
+          const newTeam = {
+            id: Date.now(), // Tạo ID mới dựa trên timestamp
+            title: name,
+            imageSource: {
+              uri: "https://cdn.pixabay.com/photo/2024/05/26/10/15/bird-8788491_1280.jpg",
+            },
+            isAdmin: true, // Đảm bảo team mới có quyền admin
+            description: desc,
+          };
+          // Thêm vào danh sách allTeams và filteredTeams
+          const updatedTeams = [newTeam, ...allTeams];
+          setAllTeams(updatedTeams);
+          setFilteredTeams(updatedTeams); // Cập nhật danh sách hiển thị
+          setShowCreatePopup(false); // Đóng popup sau khi thêm
+        }}
+      />
+
       {/* Nav Bar */}
-      <BottomNavBar onAddPress={() => router.push("/Authen/Login")} />
+      <BottomNavBar onAddPress={() => setShowCreatePopup(true)} />
     </SafeAreaView>
   );
 }
