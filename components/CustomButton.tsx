@@ -5,8 +5,10 @@ import {
   ViewStyle,
   TextStyle,
   Text,
+  View,
   Platform,
 } from "react-native";
+import { ReactNode } from "react";
 import { Colors } from "@/constants/Colors";
 import useCustomFonts from "@/hooks/useCustomFonts";
 
@@ -18,6 +20,8 @@ interface CustomButtonProps {
   color?: "primary" | "secondary";
   borderRadius?: number;
   shadow?: boolean;
+  fontSize?: number;
+  iconLeft?: ReactNode; // icon component bên trái, ví dụ <Ionicons ... />
 }
 
 export default function CustomButton({
@@ -28,12 +32,12 @@ export default function CustomButton({
   color = "primary",
   borderRadius = 10,
   shadow = true,
+  fontSize = 20,
+  iconLeft,
 }: CustomButtonProps) {
   const { fontsLoaded } = useCustomFonts();
 
-  if (!fontsLoaded) {
-    return null;
-  }
+  if (!fontsLoaded) return null;
 
   const buttonColor = color === "primary" ? "#7AB2D3" : "#C0C0C0";
   const textColor = color === "primary" ? "#FFFFFF" : "#000000";
@@ -42,32 +46,42 @@ export default function CustomButton({
     <TouchableOpacity
       style={[
         styles.button,
-        { backgroundColor: buttonColor, borderRadius: borderRadius },
+        { backgroundColor: buttonColor, borderRadius },
         shadow && Platform.OS === "ios" ? styles.shadow : { elevation: 6 },
         style,
       ]}
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <Text style={[styles.text, { color: textColor }, textStyle]}>
-        {title}
-      </Text>
+      <View style={styles.content}>
+        {iconLeft && <View style={styles.iconWrapper}>{iconLeft}</View>}
+        <Text style={[styles.text, { color: textColor, fontSize }, textStyle]}>
+          {title}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: 5,
+    paddingVertical: 8,
     paddingHorizontal: 20,
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     width: "100%",
   },
+  content: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconWrapper: {
+    marginRight: 8,
+  },
   text: {
     fontFamily: "Poppins_700Bold",
-    fontSize: 20,
   },
   shadow: {
     shadowColor: "#000",

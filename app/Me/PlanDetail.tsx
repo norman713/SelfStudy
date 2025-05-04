@@ -10,8 +10,6 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import PlanInfo from "../../components/plan/PlanInfo";
 import BackButton from "@/components/BackButton";
-import { router, useRouter } from "expo-router";
-import { useLocalSearchParams } from "expo-router";
 import Checkbox from "@/components/CheckBox";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CustomButton from "@/components/CustomButton";
