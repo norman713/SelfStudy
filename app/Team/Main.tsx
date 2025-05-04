@@ -100,7 +100,7 @@ export default function TeamScreen() {
             iconLeft={
               <Ionicons name="add-circle-sharp" size={20} color="#fff" />
             }
-            onPress={() => setShowCreatePopup(true)} // Mở popup khi nhấn
+            onPress={() => setShowCreatePopup(true)}
             color="primary"
           />
         </View>
