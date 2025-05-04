@@ -14,6 +14,7 @@ interface TeamItemProps {
   imageSource: ImageSourcePropType;
   isAdmin?: boolean;
   style?: ViewStyle;
+  onPress?: () => void; // Thêm onPress tùy chọn
 }
 
 export default function TeamItem({
@@ -21,6 +22,7 @@ export default function TeamItem({
   imageSource,
   isAdmin = false,
   style,
+  onPress, // Nhận prop onPress
 }: TeamItemProps) {
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -32,28 +34,32 @@ export default function TeamItem({
         style,
       ]}
     >
-      <View style={styles.container}>
-        {/* Left: Avatar + Title */}
-        <View style={styles.leftSection}>
-          <Image source={imageSource} style={styles.avatar} />
-          <Text style={styles.title}>{title}</Text>
-        </View>
+      <TouchableOpacity onPress={onPress}>
+        {" "}
+        {/* Thêm onPress vào đây, nếu có */}
+        <View style={styles.container}>
+          {/* Left: Avatar + Title */}
+          <View style={styles.leftSection}>
+            <Image source={imageSource} style={styles.avatar} />
+            <Text style={styles.title}>{title}</Text>
+          </View>
 
-        {/* Right: Admin icon */}
-        {isAdmin && (
-          <TouchableOpacity
-            style={styles.adminWrapper}
-            onPress={() => setShowTooltip(!showTooltip)}
-            activeOpacity={0.8}
-          >
-            <Image
-              source={require("../../assets/images/icon/Main_Component.png")}
-              style={styles.adminIcon}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
-        )}
-      </View>
+          {/* Right: Admin icon */}
+          {isAdmin && (
+            <TouchableOpacity
+              style={styles.adminWrapper}
+              onPress={() => setShowTooltip(!showTooltip)}
+              activeOpacity={0.8}
+            >
+              <Image
+                source={require("../../assets/images/icon/Main_Component.png")}
+                style={styles.adminIcon}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+      </TouchableOpacity>
 
       {/* Tooltip */}
       {isAdmin && showTooltip && (
@@ -75,7 +81,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-
     paddingVertical: 12,
     paddingHorizontal: 16,
     marginBottom: 12,

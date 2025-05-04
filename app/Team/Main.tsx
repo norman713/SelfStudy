@@ -16,6 +16,7 @@ const mockTeamData = [
     imageSource: {
       uri: "https://www.bigfootdigital.co.uk/wp-content/uploads/2020/07/image-optimisation-scaled.jpg",
     },
+    isAdmin: true,
   },
   {
     id: 2,
