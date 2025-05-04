@@ -5,7 +5,8 @@ import CustomButton from "@/components/CustomButton";
 import ToggleTabButton from "@/components/ToggleTabButton";
 import Header from "@/components/Header";
 import BottomNavBar from "@/components/navigation/ButtonNavBar";
-import { router, useRouter } from "expo-router";
+import { useRouter } from "expo-router"; // Import useRouter từ expo-router
+
 import TeamItem from "@/components/team/TeamItem";
 import SearchBar from "@/components/SearchBar";
 import CreateTeamPopup from "@/components/popup/CreateTeam";
@@ -24,6 +25,7 @@ const mockTeamData = [
     imageSource: {
       uri: "https://www.bigfootdigital.co.uk/wp-content/uploads/2020/07/image-optimisation-scaled.jpg",
     },
+    isAdmin: false,
   },
   {
     id: 3,
@@ -51,6 +53,7 @@ export default function TeamScreen() {
   };
 
   const [showCreatePopup, setShowCreatePopup] = useState(false);
+  const router = useRouter();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -114,6 +117,11 @@ export default function TeamScreen() {
               title={team.title}
               imageSource={team.imageSource}
               isAdmin={team.isAdmin}
+              onPress={() => {
+                if (team.isAdmin) {
+                  router.push("/Team/TeamInfo");
+                }
+              }}
             />
           ))}
         </ScrollView>
