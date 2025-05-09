@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View, SafeAreaView, ScrollView } from "react-native";
+import { StyleSheet, View, SafeAreaView, ScrollView, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import CustomButton from "@/components/CustomButton";
 import ToggleTabButton from "@/components/ToggleTabButton";
@@ -10,6 +10,7 @@ import { useRouter } from "expo-router"; // Import useRouter từ expo-router
 import TeamItem from "@/components/team/TeamItem";
 import SearchBar from "@/components/SearchBar";
 import CreateTeamPopup from "@/components/popup/CreateTeam";
+import JoinPopup from "@/components/popup/JoinTeam";
 const mockTeamData = [
   {
     id: 1,
@@ -53,6 +54,7 @@ export default function TeamScreen() {
   };
 
   const [showCreatePopup, setShowCreatePopup] = useState(false);
+  const [showJoinPopup, setShowJoinPopup] = useState(false);
   const router = useRouter();
 
   return (
@@ -100,7 +102,7 @@ export default function TeamScreen() {
             iconLeft={
               <Ionicons name="add-circle-sharp" size={20} color="#fff" />
             }
-            onPress={() => setShowCreatePopup(true)}
+            onPress={() => setShowJoinPopup(true)}
             color="primary"
           />
         </View>
@@ -128,6 +130,14 @@ export default function TeamScreen() {
       </View>
 
       {/* Popup tạo team */}
+      <JoinPopup
+        visible={showJoinPopup}
+        onClose={() => setShowJoinPopup(false)}
+        onSave={(name, desc) => {
+          setShowJoinPopup(false);
+        }}
+      />
+      {/* Popup tạo team */}
       <CreateTeamPopup
         visible={showCreatePopup}
         onClose={() => setShowCreatePopup(false)}
@@ -139,14 +149,13 @@ export default function TeamScreen() {
             imageSource: {
               uri: "https://cdn.pixabay.com/photo/2024/05/26/10/15/bird-8788491_1280.jpg",
             },
-            isAdmin: true, // Đảm bảo team mới có quyền admin
+            isAdmin: true,
             description: desc,
           };
-          // Thêm vào danh sách allTeams và filteredTeams
           const updatedTeams = [newTeam, ...allTeams];
           setAllTeams(updatedTeams);
-          setFilteredTeams(updatedTeams); // Cập nhật danh sách hiển thị
-          setShowCreatePopup(false); // Đóng popup sau khi thêm
+          setFilteredTeams(updatedTeams);
+          setShowCreatePopup(false);
         }}
       />
 

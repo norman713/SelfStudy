@@ -72,9 +72,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: "#fff",
     padding: 10,
-    elevation: 10,
+    elevation: 2,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 0.2 },
     shadowRadius: 10,
   },
   backtittle: {
