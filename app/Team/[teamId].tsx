@@ -20,6 +20,7 @@ import { useLocalSearchParams } from "expo-router";
 import teamApi from "@/api/teamApi";
 import memberApi from "@/api/memberApi";
 import { useTeamContext } from "@/context/TeamContext";
+import userApi from "@/api/userApi";
 
 interface Member {
   userId: string; // Unique identifier for the user
@@ -45,7 +46,6 @@ export default function TeamInfo() {
       setIsLoading(true);
       try {
         const response = await memberApi.getUserInfo(userId, teamId);
-        console.log("user info:", response.role);
         setRole(response.role);
       } catch (error) {
         console.error("Error fetching user info:", error);
@@ -88,7 +88,6 @@ export default function TeamInfo() {
       setIsLoading(true);
       try {
         const response = await memberApi.getList(teamId, "", size); // cursor = "" for initial
-        console.log("Fetched members:", response);
         setMembers(
           (response.members || []).map((member: any) => ({
             ...member,
@@ -127,24 +126,6 @@ export default function TeamInfo() {
       setIsLoading(true); // Set loading state to true
       // Call the deleteMember API to remove the member
       await memberApi.deleteMember(userId, teamId, memberId);
-      // Remove the member from the state after successful deletion
-      setMembers(members.filter((member) => member.userId !== memberId));
-      Alert.alert("Success", "Member removed successfully.");
-    } catch (error) {
-      console.error("Error removing member:", error);
-      Alert.alert("Error", "Failed to remove member.");
-    } finally {
-      setIsLoading(false); // Set loading state to false
-    }
-  };
-
-  // Handle member change role
-  const handleRoleMember = async (memberId: string) => {
-    if (!teamId || !userId) return; // Ensure teamId and userId are available
-
-    try {
-      setIsLoading(true); // Set loading state to true
-      await memberApi.updateRole(userId, teamId, memberId);
       // Remove the member from the state after successful deletion
       setMembers(members.filter((member) => member.userId !== memberId));
       Alert.alert("Success", "Member removed successfully.");
@@ -247,6 +228,99 @@ export default function TeamInfo() {
     }
   };
 
+  const [selectedRole, setSelectedRole] = useState<string | null>(null); // Store the selected role
+  const [roleModalVisible, setRoleModalVisible] = useState(false); // Control modal visibility
+
+  // Step 1: Open modal to select role
+  const handleRoleMember = (memberId: string) => {
+    setActiveMemberId(memberId); // Store the active member ID
+    setRoleModalVisible(true); // Show the role selection modal
+  };
+
+  // Step 2: Handle role selection
+  const handleRoleSelection = (role: string) => {
+    setSelectedRole(role); // Set the selected role
+    setRoleModalVisible(false); // Close the modal after selection
+    updateMemberRole(role); // Call the API to update the role
+  };
+
+  // Step 3: Call the updateRole API to update the role of the member
+  const updateMemberRole = async (role: string) => {
+    if (!activeMemberId || !teamId || !userId) return;
+
+    try {
+      setIsLoading(true); // Set loading state to true
+      await memberApi.updateRole(userId, teamId, activeMemberId, role); // Call the updateRole API
+      // Update the role in the state after successful update
+      setMembers(
+        members.map((member) =>
+          member.userId === activeMemberId ? { ...member, role } : member
+        )
+      );
+      Alert.alert("Success", `Role updated to ${role}`);
+    } catch (error) {
+      console.error("Error updating role:", error);
+      Alert.alert("Error", "Failed to update role.");
+    } finally {
+      setIsLoading(false); // Set loading state to false
+    }
+  };
+
+  const [isEditingDescription, setIsEditingDescription] = useState(false); // State for description editing
+  const [newDescription, setNewDescription] = useState(teamInfo?.description); // State for new team description input
+  const [userInfo, setUserInfo] = useState<any>(null); // State to store user information
+  // Handle description editing
+  const handleEditDescription = () => {
+    setIsEditingDescription(true);
+  };
+
+  // Handle save description
+  const handleSaveDescription = async () => {
+    if (!teamId || !userId) return;
+
+    const trimmedDescription = newDescription.trim();
+    if (trimmedDescription === teamInfo?.description) {
+      setIsEditingDescription(false); // Close the editor if there's no change
+      return;
+    }
+
+    try {
+      setIsLoading(true); // Set loading state to true
+      // Call the updateTeam API to update the team description
+      await teamApi.updateTeam(teamId, userId, undefined, trimmedDescription);
+      // Update the team info with the new description
+      setTeamInfo({ ...teamInfo, description: trimmedDescription });
+      setNewDescription(trimmedDescription);
+      Alert.alert("Success", "Team description updated.");
+    } catch (error) {
+      console.error("Error updating team description:", error);
+      Alert.alert("Error", "Failed to update team description.");
+    } finally {
+      setIsEditingDescription(false);
+      setIsLoading(false);
+    }
+  };
+  // Fetch user info
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      if (!userId) return; // Make sure userId is available
+      setIsLoading(true);
+
+      try {
+        const response = await userApi.getUserInfo(member.userId);
+        console.log("member info:", response);
+        setUserInfo(response);
+      } catch (error) {
+        console.error("Error fetching user info:", error);
+        Alert.alert("Error", "Failed to load user information.");
+      } finally {
+        setIsLoading(false); // Set loading state to false after fetching data
+      }
+    };
+
+    fetchUserInfo();
+  }, [userId]); // Dependency array includes userId so it runs when userId changes
+
   return (
     <SafeAreaView>
       <View style={styles.container}>
@@ -340,9 +414,29 @@ export default function TeamInfo() {
         </View>
 
         {/* Description */}
-        <TouchableOpacity onPress={navigateToUpdateDescription}>
+        {/* <TouchableOpacity onPress={navigateToUpdateDescription}>
           <Text style={styles.description}>{teamInfo?.description}</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
+
+        {/* Team Description */}
+        <View style={styles.teamDescriptionContainer}>
+          {isEditingDescription ? (
+            <TextInput
+              style={styles.teamDescriptionInput}
+              value={newDescription}
+              onChangeText={setNewDescription}
+              onBlur={handleSaveDescription} // Save description when focus is lost
+              autoFocus
+            />
+          ) : (
+            <Text
+              style={styles.teamDescription}
+              onPress={role === "CREATOR" ? handleEditDescription : undefined} // Only allow editing for CREATOR role
+            >
+              {teamInfo?.description || "No description available"}
+            </Text>
+          )}
+        </View>
 
         {/* Show Members */}
         <View style={styles.show}>
@@ -422,6 +516,41 @@ export default function TeamInfo() {
           )}
         </View>
 
+        {/* Role Selection Modal */}
+        {roleModalVisible && (
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalBox}>
+              <Text style={{ fontSize: 16, marginBottom: 10 }}>
+                Select Role
+              </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <TouchableOpacity onPress={() => handleRoleSelection("MEMBER")}>
+                  <Text>MEMBER</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleRoleSelection("ADMIN")}>
+                  <Text>ADMIN</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleRoleSelection("CREATOR")}
+                >
+                  <Text>CREATOR</Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                onPress={() => setRoleModalVisible(false)} // Close modal
+                style={styles.cancelButton}
+              >
+                <Text>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* Profile Modal */}
         {activeMember && (
           <ProfileCard
@@ -430,6 +559,7 @@ export default function TeamInfo() {
             user={activeMember} // Passing the selected user's data to the ProfileCard
           />
         )}
+
         {/* button leave/delete */}
         <View style={styles.buttom}>
           {/* Leave Team Button */}
@@ -572,6 +702,22 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignSelf: "center",
     justifyContent: "center",
+  },
+  teamDescriptionContainer: {
+    marginBottom: 10,
+    width: "100%",
+  },
+  teamDescriptionInput: {
+    fontSize: 16,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    width: "100%",
+  },
+  teamDescription: {
+    fontSize: 16,
+    color: "#333",
   },
   actionText: {
     marginLeft: 8,

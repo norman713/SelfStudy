@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,6 +8,7 @@ import {
   Pressable,
   TouchableOpacity,
   ScrollView,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CustomButton from "@/components/CustomButton";
@@ -14,9 +16,69 @@ import { Ionicons, Feather } from "@expo/vector-icons";
 import useCustomFonts from "@/hooks/useCustomFonts";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
+import userApi from "@/api/userApi"; // Import the API call
 
 export default function Profile() {
   const fontsLoaded = useCustomFonts();
+  const [userData, setUserData] = useState({
+    username: "",
+    dateOfBirth: "",
+    gender: "",
+    avatarUrl: "",
+  });
+
+  const [newUserData, setNewUserData] = useState({
+    username: "",
+    dateOfBirth: "",
+    gender: "",
+  });
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await userApi.getUserInfo(
+          "554c0f1d-b1f4-4466-8778-8caaff792b45"
+        );
+        setUserData({
+          username: response.username,
+          dateOfBirth: response.dateOfBirth,
+          gender: response.gender,
+          avatarUrl: "https://randomuser.me/api/portraits/lego/1.jpg",
+        });
+        setNewUserData({
+          username: response.username,
+          dateOfBirth: response.dateOfBirth,
+          gender: response.gender,
+        });
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+    fetchUserData();
+  }, []);
+
+  const handleInputChange = (field, value) => {
+    setNewUserData((prevData) => ({
+      ...prevData,
+      [field]: value,
+    }));
+  };
+
+  const handleSave = async () => {
+    try {
+      // Call the API with all updated fields
+      const response = await userApi.updateUserInfo(
+        "554c0f1d-b1f4-4466-8778-8caaff792b45",
+        newUserData
+      );
+      Alert.alert("Success", "User info updated successfully.");
+      setUserData(newUserData); // Update local state with the new data
+    } catch (error) {
+      console.error("Error updating user data:", error);
+      Alert.alert("Error", "Failed to update user info.");
+    }
+  };
+
   if (!fontsLoaded) return null;
 
   return (
@@ -31,7 +93,7 @@ export default function Profile() {
         <View style={styles.avatarContainer}>
           <Image
             source={{
-              uri: "https://anhcute.net/wp-content/uploads/2024/09/Anh-chibi-cho-Shiba-nghich-ngom-dang-yeu.jpg",
+              uri: userData.avatarUrl || "https://via.placeholder.com/110", // Placeholder image if avatarUrl is empty
             }}
             style={styles.avatar}
           />
@@ -49,7 +111,11 @@ export default function Profile() {
           <View style={styles.inputWrapper}>
             <Text style={styles.label}>Username</Text>
             <View style={styles.inputRow}>
-              <TextInput style={styles.input} value="Anna123" />
+              <TextInput
+                style={styles.input}
+                value={newUserData.username}
+                onChangeText={(text) => handleInputChange("username", text)} // Update username
+              />
               <Feather name="edit-2" size={20} color="#7AB2D3" />
             </View>
           </View>
@@ -57,7 +123,11 @@ export default function Profile() {
           <View style={styles.inputWrapper}>
             <Text style={styles.label}>Date of birth</Text>
             <View style={styles.inputRow}>
-              <TextInput style={styles.input} value="12-02-2004" />
+              <TextInput
+                style={styles.input}
+                value={newUserData.dateOfBirth}
+                onChangeText={(text) => handleInputChange("dateOfBirth", text)} // Update dateOfBirth
+              />
               <Feather name="calendar" size={20} color="#7AB2D3" />
             </View>
           </View>
@@ -65,7 +135,11 @@ export default function Profile() {
           <View style={styles.inputWrapper}>
             <Text style={styles.label}>Gender</Text>
             <View style={styles.inputRow}>
-              <TextInput style={styles.input} value="FEMALE" />
+              <TextInput
+                style={styles.input}
+                value={newUserData.gender}
+                onChangeText={(text) => handleInputChange("gender", text)} // Update gender
+              />
               <Feather name="chevron-down" size={20} color="#7AB2D3" />
             </View>
           </View>
@@ -76,10 +150,7 @@ export default function Profile() {
         </View>
 
         <View style={styles.buttonContainer}>
-          <CustomButton
-            title="Save"
-            onPress={() => router.push("/Authen/Login")}
-          />
+          <CustomButton title="Save" onPress={handleSave} /> {/* Save button */}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -117,7 +188,7 @@ const styles = StyleSheet.create({
   cameraIcon: {
     position: "absolute",
     bottom: 0,
-    right: "35%",
+    right: "46%",
     backgroundColor: "#7AB2D3",
     padding: 6,
     borderRadius: 20,

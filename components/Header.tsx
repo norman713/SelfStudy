@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 50,
     right: -80,
-    zIndex: 1,
+    zIndex: 9999, // Ensure it appears on top
   },
   dropdown: {
     backgroundColor: "#fff",

@@ -116,7 +116,14 @@ export default function TeamScreen() {
       {/* Header */}
       <Header />
       {/* Search Bar */}
-      <View style={{ alignItems: "center", marginVertical: 10, width: "100%" }}>
+      <View
+        style={{
+          alignItems: "center",
+          marginVertical: 10,
+          width: "100%",
+          zIndex: -1,
+        }}
+      >
         <SearchBar
           data={teams}
           searchKey="name"

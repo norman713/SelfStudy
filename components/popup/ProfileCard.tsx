@@ -14,10 +14,11 @@ interface ProfileCardProps {
   visible: boolean;
   onClose: () => void;
   user: {
-    name: string;
-    avatar: string;
-    // birthdate: string;
-    // gender: string;
+    id: string;
+    username: string;
+    avatarUrl: string;
+    dateOfBirth: string;
+    gender: string;
   };
 }
 
@@ -45,20 +46,25 @@ export default function ProfileCard({
 
           {/* Profile Info */}
           <View style={styles.profileContainer}>
-            <Image source={{ uri: user.avatar }} style={styles.avatar} />
-            <Text style={styles.userName}>{user.name}</Text>
+            <Image
+              source={{
+                uri: user.avatarUrl,
+              }}
+              style={styles.avatar}
+            />
+            <Text style={styles.userName}>{user.username}</Text>
 
             {/* Birthdate and Gender */}
-            {/* <View style={styles.infoContainer}>
+            <View style={styles.infoContainer}>
               <Text style={styles.infoText}>
                 <Ionicons name="calendar" size={16} color="#000" />{" "}
-                {user.birthdate}
+                {user.dateOfBirth}
               </Text>
               <Text style={styles.infoText}>
                 <Ionicons name="male-female" size={16} color="#000" />{" "}
                 {user.gender}
               </Text>
-            </View> */}
+            </View>
           </View>
         </View>
       </View>
@@ -124,7 +130,7 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 14,
-    color: "#000", // White text for the birthdate and gender
+    color: "#7AB2D3",
     marginVertical: 3,
   },
 });
