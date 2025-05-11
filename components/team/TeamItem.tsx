@@ -11,7 +11,7 @@ import {
 
 interface TeamItemProps {
   title: string;
-  imageSource: ImageSourcePropType;
+  imageSource: { uri: string }; // Compatible with ImageSourcePropType
   isAdmin?: boolean;
   style?: ViewStyle;
   onPress?: () => void; // Thêm onPress tùy chọn

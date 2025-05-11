@@ -12,10 +12,10 @@ import { Ionicons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
 import { useRouter } from "expo-router";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-
 import { SafeAreaView } from "react-native-safe-area-context";
 import Entypo from "@expo/vector-icons/Entypo";
 import ProfileCard from "@/components/popup/ProfileCard";
+import { useLocalSearchParams } from "expo-router";
 
 // Define Member type
 interface Member {
@@ -28,7 +28,8 @@ interface Member {
 }
 export default function TeamInfo() {
   const router = useRouter();
-
+  const { teamId } = useLocalSearchParams<{ teamId: string }>();
+  console.log(teamId);
   const [modalVisible, setModalVisible] = useState(false); // Control modal visibility
   const [activeMember, setActiveMember] = useState<Member | null>(null); // Store selected member for profile view
   // Mock data with different roles (creator, admin, member)
