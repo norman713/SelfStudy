@@ -19,6 +19,7 @@ import SearchBar from "@/components/SearchBar";
 import CreateTeamPopup from "@/components/popup/CreateTeam";
 import JoinPopup from "@/components/popup/JoinTeam";
 import teamApi from "@/api/teamApi";
+import memberApi from "@/api/memberApi";
 
 const { width, height } = Dimensions.get("window");
 interface Team {
@@ -79,6 +80,23 @@ export default function TeamScreen() {
     if (activeFilter === "joined") return filteredTeams;
     return filteredTeams.filter((team) => team.isAdmin); // Chỉ hiển thị admin
   };
+  const handleJoinTeam = async (teamCode: string) => {
+    try {
+      const response = await memberApi.join(userId, teamCode);
+      if (response) {
+        Alert.alert("Success", "You have successfully joined the team!");
+      } else {
+        Alert.alert("Error", "Failed to join the team. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error joining team:", error);
+
+      const errorMessage =
+        error.response?.message || "There was an error joining the team.";
+      Alert.alert("Error", errorMessage);
+    }
+  };
+
   // xử lý tạo team
   const handleSaveNewTeam = async (name: string, description: string) => {
     try {
@@ -97,7 +115,6 @@ export default function TeamScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <Header />
-
       {/* Search Bar */}
       <View style={{ alignItems: "center", marginVertical: 10, width: "100%" }}>
         <SearchBar
@@ -157,7 +174,7 @@ export default function TeamScreen() {
                 imageSource={team.imageSource}
                 isAdmin={team.isAdmin} // Check giá trị isAdmin
                 onPress={() => {
-                  router.push(`/Team/${team.id}`);
+                  router.push(`/Team/${team.id}?userId=${userId}`);
                 }}
               />
             );
@@ -169,9 +186,7 @@ export default function TeamScreen() {
       <JoinPopup
         visible={showJoinPopup}
         onClose={() => setShowJoinPopup(false)}
-        onSave={(name, desc) => {
-          setShowJoinPopup(false);
-        }}
+        onSave={handleJoinTeam}
       />
       {/* Popup tạo team */}
       <CreateTeamPopup

@@ -16,8 +16,8 @@ interface ProfileCardProps {
   user: {
     name: string;
     avatar: string;
-    birthdate: string;
-    gender: string;
+    // birthdate: string;
+    // gender: string;
   };
 }
 
@@ -49,7 +49,7 @@ export default function ProfileCard({
             <Text style={styles.userName}>{user.name}</Text>
 
             {/* Birthdate and Gender */}
-            <View style={styles.infoContainer}>
+            {/* <View style={styles.infoContainer}>
               <Text style={styles.infoText}>
                 <Ionicons name="calendar" size={16} color="#000" />{" "}
                 {user.birthdate}
@@ -58,7 +58,7 @@ export default function ProfileCard({
                 <Ionicons name="male-female" size={16} color="#000" />{" "}
                 {user.gender}
               </Text>
-            </View>
+            </View> */}
           </View>
         </View>
       </View>

@@ -1,15 +1,18 @@
 import { Stack } from "expo-router";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import BackButton from "@/components/BackButton";
+import { TeamProvider } from "@/context/TeamContext";
+import React from "react";
 
 const Navigation = createNativeStackNavigator();
 
 export default function RootLayout() {
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-      }}
-    ></Stack>
+    <TeamProvider>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      ></Stack>
+    </TeamProvider>
   );
 }

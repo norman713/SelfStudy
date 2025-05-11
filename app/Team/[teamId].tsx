@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   FlatList,
   TextInput,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
@@ -16,68 +17,100 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Entypo from "@expo/vector-icons/Entypo";
 import ProfileCard from "@/components/popup/ProfileCard";
 import { useLocalSearchParams } from "expo-router";
+import teamApi from "@/api/teamApi";
+import memberApi from "@/api/memberApi";
+import { useTeamContext } from "@/context/TeamContext";
 
-// Define Member type
 interface Member {
-  id: number;
-  name: string;
-  avatar: string;
-  role: string;
-  birthdate: string;
-  gender: string;
+  userId: string; // Unique identifier for the user
+  username: string; // Username of the member
+  avatarUrl: string; // URL of the user's avatar image
+  role: string; // Role of the user (e.g., "CREATOR", "ADMIN", "MEMBER")
 }
 export default function TeamInfo() {
   const router = useRouter();
   const { teamId } = useLocalSearchParams<{ teamId: string }>();
-  console.log(teamId);
+  const { userId } = useLocalSearchParams<{ userId: string }>();
+  const [size, setSize] = useState<number>(10);
   const [modalVisible, setModalVisible] = useState(false); // Control modal visibility
   const [activeMember, setActiveMember] = useState<Member | null>(null); // Store selected member for profile view
-  // Mock data with different roles (creator, admin, member)
-  const mockTeamData = {
-    teamName: "Team Cầu Lông",
-    teamDescription:
-      "This is a team bla bla description to check max size of the text and handle",
-    teamCode: "Ayz6dfghjD",
-    memberCount: 8,
-    members: [
-      {
-        id: 1,
-        name: "Liam123",
-        avatar: "https://randomuser.me/api/portraits/men/1.jpg",
-        role: "creator", // creator role
-        birthdate: "27/10/2002",
-        gender: "Male",
-      },
-      {
-        id: 2,
-        name: "h12",
-        avatar: "https://randomuser.me/api/portraits/men/2.jpg",
-        role: "admin", // admin role
-        birthdate: "15/03/2000",
-        gender: "Male",
-      },
-      {
-        id: 3,
-        name: "h1",
-        avatar: "https://randomuser.me/api/portraits/men/3.jpg",
-        role: "member", // regular member role
-        birthdate: "01/05/1998",
-        gender: "Female",
-      },
-      {
-        id: 4,
-        name: "hdfghj",
-        avatar: "https://randomuser.me/api/portraits/men/4.jpg",
-        role: "member", // regular member role
-        birthdate: "01/05/1998",
-        gender: "Female",
-      },
-    ],
-  };
+  const [teamInfo, setTeamInfo] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { role, setRole } = useTeamContext();
+  const [members, setMembers] = useState<Member[]>([]);
+
+  //get user info in this team
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      setIsLoading(true);
+      try {
+        const response = await memberApi.getUserInfo(userId, teamId);
+        console.log("user info:", response.role);
+        setRole(response.role);
+      } catch (error) {
+        console.error("Error fetching user info:", error);
+        Alert.alert("Error", "Failed to load user information.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (userId && teamId) {
+      fetchUserInfo();
+    }
+  }, [userId, teamId, setRole]);
+
+  //get team info
+  useEffect(() => {
+    const fetchTeamInfo = async () => {
+      setIsLoading(true);
+      try {
+        const response = await teamApi.getTeamInfo(teamId);
+        setTeamInfo(response);
+      } catch (error) {
+        Alert.alert("Error", "Failed to load team information.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTeamInfo();
+  }, [teamId]);
+
+  useEffect(() => {
+    if (teamInfo) {
+      console.log("team info:", teamInfo);
+    }
+  }, [teamInfo]);
+  //get member list
+  useEffect(() => {
+    const fetchMembers = async () => {
+      setIsLoading(true);
+      try {
+        const response = await memberApi.getList(teamId, "", size); // cursor = "" for initial
+        console.log("Fetched members:", response);
+        setMembers(
+          (response.members || []).map((member: any) => ({
+            ...member,
+            avatarUrl: "https://randomuser.me/api/portraits/lego/1.jpg", // ảnh cố định
+          }))
+        );
+      } catch (error) {
+        console.error("Error fetching member list:", error);
+        Alert.alert("Error", "Failed to load members.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (teamId) {
+      fetchMembers();
+    }
+  }, [teamId, size]);
 
   const [showMembers, setShowMembers] = useState(false);
-  const [members, setMembers] = useState(mockTeamData.members);
-  const [teamName, setTeamName] = useState(mockTeamData.teamName);
+
+  const [teamName, setTeamName] = useState(teamInfo?.name);
   const [isEditing, setIsEditing] = useState(false); // State for editing mode
   const [newTeamName, setNewTeamName] = useState(teamName); // State for new team name input
 
@@ -136,59 +169,86 @@ export default function TeamInfo() {
             }}
             style={styles.avatar}
           />
-          <TouchableOpacity style={styles.editIcon}>
-            <Ionicons name="camera" size={24} color="#fff" />
-          </TouchableOpacity>
+
+          {/* Only show camera icon if the role is CREATOR */}
+          {role === "CREATOR" && (
+            <TouchableOpacity style={styles.editIcon}>
+              <Ionicons name="camera" size={24} color="#fff" />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Team Name */}
         <View style={styles.teamNameContainer}>
-          {isEditing ? (
-            <TextInput
-              style={styles.teamNameInput}
-              value={newTeamName}
-              onChangeText={setNewTeamName}
-              onBlur={handleSaveName} // Save name when focus is lost
-              autoFocus
-            />
+          {role === "CREATOR" ? (
+            // If the role is CREATOR, allow editing
+            isEditing ? (
+              <TextInput
+                style={styles.teamNameInput}
+                value={newTeamName}
+                onChangeText={setNewTeamName}
+                onBlur={handleSaveName} // Save name when focus is lost
+                autoFocus
+              />
+            ) : (
+              <Text style={styles.teamName} onPress={handleEditName}>
+                {teamInfo?.name || "Loading..."}
+              </Text>
+            )
           ) : (
-            <Text style={styles.teamName} onPress={handleEditName}>
-              {teamName}
+            // If the role is not CREATOR, display team name without editing
+            <Text style={styles.teamName}>
+              {teamInfo?.name || "Loading..."}
             </Text>
           )}
-          <Feather name="edit-3" size={24} color="#7AB2D3" />
-        </View>
 
-        {/* Team Code */}
-        <View style={styles.teamCodeContainer}>
-          <Text style={styles.teamCode}>
-            Team code: {mockTeamData.teamCode}
-          </Text>
-          <Ionicons name="reload" size={15} color="#7AB2D3" />
+          {/* Show the edit icon only if the role is CREATOR */}
+          {role === "CREATOR" && (
+            <Feather name="edit-3" size={24} color="#7AB2D3" />
+          )}
         </View>
+        {/* Team Code */}
+        {role !== "MEMBER" && ( // Hide the entire section for MEMBER role
+          <View style={styles.teamCodeContainer}>
+            <Text style={styles.teamCode}>
+              Team code: {teamInfo?.teamCode || "Loading..."}{" "}
+              {/* Hiển thị "Loading..." nếu teamInfo chưa có */}
+            </Text>
+
+            {/* Show the reload icon only if the role is CREATOR */}
+            {role === "CREATOR" && (
+              <Ionicons name="reload" size={15} color="#7AB2D3" />
+            )}
+          </View>
+        )}
 
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
           <TouchableOpacity
-            onPress={() => router.push("/Team/Main")}
+            onPress={() => router.push("/Team/SearchUser")}
             style={styles.actionButton}
           >
             <Ionicons name="search" size={24} color="black" />
             <Text style={styles.actionText}>Find member</Text>
           </TouchableOpacity>
+
           <TouchableOpacity style={styles.actionButton}>
             <Feather name="settings" size={24} color="black" />
             <Text style={styles.actionText}>Notification settings</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Feather name="user-plus" size={24} color="black" />
-            <Text style={styles.actionText}>Invite user</Text>
-          </TouchableOpacity>
+
+          {/* Conditionally render the Invite User button only if the role is not MEMBER */}
+          {role !== "MEMBER" && (
+            <TouchableOpacity style={styles.actionButton}>
+              <Feather name="user-plus" size={24} color="black" />
+              <Text style={styles.actionText}>Invite user</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Description */}
         <TouchableOpacity onPress={navigateToUpdateDescription}>
-          <Text style={styles.description}>{mockTeamData.teamDescription}</Text>
+          <Text style={styles.description}>{teamInfo?.description}</Text>
         </TouchableOpacity>
 
         {/* Show Members */}
@@ -202,26 +262,25 @@ export default function TeamInfo() {
               size={24}
               color="black"
             />
-            <Text>Show members</Text>
+            <Text>Show members ({teamInfo?.totalMembers || 0})</Text>{" "}
+            {/* Dynamically display total members */}
           </TouchableOpacity>
 
           {/* Members List */}
           {showMembers && (
             <FlatList
-              data={mockTeamData.members}
-              keyExtractor={(item) => item.id.toString()}
+              data={members}
+              keyExtractor={(item) => item.userId.toString()}
               renderItem={({ item }) => (
                 <View style={styles.memberItem}>
                   <View style={styles.memberDetails}>
                     <Image
-                      source={{ uri: item.avatar }}
+                      source={{ uri: item.avatarUrl }}
                       style={styles.memberAvatar}
                     />
-                    <Text style={styles.memberName}>{item.name}</Text>
+                    <Text style={styles.memberName}>{item.username}</Text>
                   </View>
-                  <TouchableOpacity
-                    onPress={() => toggleMenu(item.id)} // Toggle the menu for member actions
-                  >
+                  <TouchableOpacity onPress={() => toggleMenu(item.userId)}>
                     <Entypo
                       name="dots-three-horizontal"
                       size={24}
@@ -229,8 +288,7 @@ export default function TeamInfo() {
                     />
                   </TouchableOpacity>
 
-                  {/* Conditional Dropdown Menu */}
-                  {showMenu && activeMemberId === item.id && (
+                  {showMenu && activeMemberId === item.userId && (
                     <View style={styles.menu}>
                       <TouchableOpacity onPress={() => handleProfileView(item)}>
                         <Text>View profile</Text>
@@ -248,6 +306,7 @@ export default function TeamInfo() {
             />
           )}
         </View>
+
         {/* Profile Modal */}
         {activeMember && (
           <ProfileCard
@@ -256,6 +315,7 @@ export default function TeamInfo() {
             user={activeMember} // Passing the selected user's data to the ProfileCard
           />
         )}
+        {/* button leave/delete */}
         <View style={styles.buttom}>
           {/* Leave Team Button */}
           <TouchableOpacity
@@ -266,14 +326,16 @@ export default function TeamInfo() {
             <Text style={styles.buttonText}>Leave team</Text>
           </TouchableOpacity>
 
-          {/* Delete Team Button */}
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => console.log("Delete team clicked")}
-          >
-            <Feather name="trash-2" size={24} color="red" />
-            <Text style={styles.buttonText}>Delete team</Text>
-          </TouchableOpacity>
+          {/* Conditionally render the Delete Team button only if the role is CREATOR */}
+          {role === "CREATOR" && (
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => console.log("Delete team clicked")}
+            >
+              <Feather name="trash-2" size={24} color="red" />
+              <Text style={styles.buttonText}>Delete team</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </SafeAreaView>

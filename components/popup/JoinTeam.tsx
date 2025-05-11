@@ -14,7 +14,7 @@ import LoginInput from "@/components/LoginInput";
 interface JoinPopupProps {
   visible: boolean;
   onClose: () => void;
-  onSave: (name: string, description: string) => void;
+  onSave: (description: string) => void;
 }
 
 export default function JoinPopup({
@@ -22,21 +22,18 @@ export default function JoinPopup({
   onClose,
   onSave,
 }: JoinPopupProps) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [teamCode, setTeamCode] = useState("");
 
   useEffect(() => {
     if (!visible) {
-      setName("");
-      setDescription("");
+      setTeamCode("");
     }
   }, [visible]);
 
   const handleSave = () => {
-    const trimmedName = name.trim();
-    const trimmedDesc = description.trim();
+    const trimmedCode = teamCode.trim();
 
-    if (!trimmedName || !trimmedDesc) {
+    if (!trimmedCode) {
       Alert.alert(
         "Missing Fields",
         "Please fill in both Name and Description."
@@ -44,7 +41,7 @@ export default function JoinPopup({
       return;
     }
 
-    onSave(trimmedName, trimmedDesc);
+    onSave(trimmedCode);
     onClose();
   };
 
@@ -67,7 +64,10 @@ export default function JoinPopup({
 
           {/* Label + Input: Name */}
           <View style={styles.inputGroup}>
-            <LoginInput placeholder="Enter team code" onChangeText={setName} />
+            <LoginInput
+              placeholder="Enter team code"
+              onChangeText={setTeamCode}
+            />
           </View>
 
           {/* Save Button */}

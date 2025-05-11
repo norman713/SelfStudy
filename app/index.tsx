@@ -16,7 +16,7 @@ export default function Index() {
       <Text style={styles.title}>StudyPal</Text>
 
       <Image
-        source={require("../../assets/images/IndexPicture.png")}
+        source={require("../assets/images/IndexPicture.png")}
         style={styles.image}
         resizeMode="contain"
       />

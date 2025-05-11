@@ -8,8 +8,13 @@ const teamApi = {
         }
         return axiosInstance.get(url);
     },
+
+    getTeamInfo(id: string){
+  const url="/teams/"+id;
+  return axiosInstance.get(url);
+},
   create(userId: string, name: string, description: string) {
-    const url = "/teams?/userId="+userId; // Endpoint tạo đội mới
+    const url = "/teams?/userId="+userId; 
     const body = {
       name: name,
       description: description,
@@ -18,6 +23,17 @@ const teamApi = {
       params: { userId },
     });
   },
+  updateTeam(teamId: string, userId:string, name:string, description:string) {
+    const url = "/teams/"+teamId+"?userId="+userId;
+    const body = {
+        name: name,
+        description: description
+    };
+    return axiosInstance.patch(url, body, {
+        params: { teamId,userId }
+    });
+}
+
 
 }
 export default teamApi;
