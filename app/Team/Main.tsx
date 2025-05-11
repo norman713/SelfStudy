@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   ScrollView,
   Text,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import CustomButton from "@/components/CustomButton";
@@ -52,7 +53,7 @@ export default function TeamScreen() {
         setIsLoading(true);
 
         const response = await teamApi.getAll(userId, cursor, size);
-        console.log("This is response team:", response.teams);
+
         const data: Team[] = Array.isArray(response.teams)
           ? response.teams.map((item: any) => ({
               id: item.id,
@@ -77,6 +78,20 @@ export default function TeamScreen() {
   const getVisibleTeams = () => {
     if (activeFilter === "joined") return filteredTeams;
     return filteredTeams.filter((team) => team.isAdmin); // Chỉ hiển thị admin
+  };
+  // xử lý tạo team
+  const handleSaveNewTeam = async (name: string, description: string) => {
+    try {
+      const response = await teamApi.create(userId, name, description);
+      console.log("Team created successfully:", response);
+
+      // Cập nhật danh sách đội sau khi tạo mới
+      const newTeam = response; // Giả sử API trả về đội vừa tạo
+      setFilteredTeams([newTeam, ...filteredTeams]);
+    } catch (error) {
+      console.error("Error creating team:", error);
+      Alert.alert("Error", "There was an error creating the team.");
+    }
   };
   return (
     <SafeAreaView style={styles.container}>
@@ -135,7 +150,6 @@ export default function TeamScreen() {
           showsVerticalScrollIndicator={false}
         >
           {getVisibleTeams().map((team) => {
-            console.log("Team props:", team); // Log ra props để kiểm tra
             return (
               <TeamItem
                 key={team.id}
@@ -151,7 +165,7 @@ export default function TeamScreen() {
         </ScrollView>
       </View>
 
-      {/* Popup tạo team */}
+      {/* Popup join team */}
       <JoinPopup
         visible={showJoinPopup}
         onClose={() => setShowJoinPopup(false)}
@@ -163,22 +177,7 @@ export default function TeamScreen() {
       <CreateTeamPopup
         visible={showCreatePopup}
         onClose={() => setShowCreatePopup(false)}
-        onSave={(name, desc) => {
-          // Tạo team mới
-          const newTeam = {
-            id: Date.now(), // Tạo ID mới dựa trên timestamp
-            title: name,
-            imageSource: {
-              uri: "https://cdn.pixabay.com/photo/2024/05/26/10/15/bird-8788491_1280.jpg",
-            },
-            isAdmin: true,
-            description: desc,
-          };
-          const updatedTeams = [newTeam, ...allTeams];
-          // setAllTeams(updatedTeams);
-          setFilteredTeams(updatedTeams);
-          setShowCreatePopup(false);
-        }}
+        onSave={handleSaveNewTeam} // Gọi API khi người dùng tạo đội mới
       />
 
       {/* Nav Bar */}

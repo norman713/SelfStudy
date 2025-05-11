@@ -9,7 +9,7 @@ const teamApi = {
         return axiosInstance.get(url);
     },
   create(userId: string, name: string, description: string) {
-    const url = "/teams/userId="+userId; // Endpoint tạo đội mới
+    const url = "/teams?/userId="+userId; // Endpoint tạo đội mới
     const body = {
       name: name,
       description: description,
