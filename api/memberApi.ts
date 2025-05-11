@@ -18,7 +18,13 @@ getList(teamId: string, cursor: string, size: number){
         }
         return axiosInstance.get(url);
 
-
+},
+search(teamId:string,cursor: string, size: number, keyword:string){
+  let url="members/search?teamId="+teamId+"&keyword="+keyword+ "&size"+ size;
+       if(cursor.length===0){
+            url +="&cursor="+ cursor;
+        }
+        return axiosInstance.get(url);
 },
 }     
 export default memberApi;                                                                        

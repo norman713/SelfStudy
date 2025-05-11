@@ -134,9 +134,31 @@ export default function TeamInfo() {
     setIsEditing(true);
   };
 
-  const handleSaveName = () => {
-    setTeamName(newTeamName);
-    setIsEditing(false);
+  // handle save name
+  const handleSaveName = async () => {
+    if (!teamId || !userId) return;
+
+    const trimmedName = newTeamName.trim();
+
+    // Nếu không thay đổi thì bỏ qua
+    if (trimmedName === teamInfo?.name) {
+      setIsEditing(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      await teamApi.updateTeam(teamId, userId, trimmedName); // 👈 chỉ gửi name
+      setTeamInfo({ ...teamInfo, name: trimmedName }); // cập nhật UI
+      setTeamName(trimmedName);
+      Alert.alert("Success", "Team name updated.");
+    } catch (error) {
+      console.error("Error updating team name:", error);
+      Alert.alert("Error", "Failed to update team name.");
+    } finally {
+      setIsEditing(false);
+      setIsLoading(false);
+    }
   };
 
   const [showMenu, setShowMenu] = useState(false); // State for toggling menu visibility
@@ -158,6 +180,10 @@ export default function TeamInfo() {
   const handleCloseModal = () => {
     setModalVisible(false); // Close the profile modal
   };
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  console.log("team id:", teamId);
+
+  // Navigate to SearchScreen and pass members data as query params (optional)
   return (
     <SafeAreaView>
       <View style={styles.container}>
@@ -207,6 +233,7 @@ export default function TeamInfo() {
             <Feather name="edit-3" size={24} color="#7AB2D3" />
           )}
         </View>
+
         {/* Team Code */}
         {role !== "MEMBER" && ( // Hide the entire section for MEMBER role
           <View style={styles.teamCodeContainer}>
@@ -224,8 +251,9 @@ export default function TeamInfo() {
 
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
+          {/* search */}
           <TouchableOpacity
-            onPress={() => router.push("/Team/SearchUser")}
+            onPress={() => router.push(`/Team/SearchUser/${teamId}`)}
             style={styles.actionButton}
           >
             <Ionicons name="search" size={24} color="black" />
@@ -330,13 +358,52 @@ export default function TeamInfo() {
           {role === "CREATOR" && (
             <TouchableOpacity
               style={styles.button}
-              onPress={() => console.log("Delete team clicked")}
+              onPress={() => setShowConfirmModal(true)}
             >
               <Feather name="trash-2" size={24} color="red" />
               <Text style={styles.buttonText}>Delete team</Text>
             </TouchableOpacity>
           )}
         </View>
+        {showConfirmModal && (
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalBox}>
+              <Text style={{ fontSize: 16, marginBottom: 10 }}>
+                Are you sure you want to delete this team?
+              </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <TouchableOpacity
+                  onPress={() => setShowConfirmModal(false)}
+                  style={styles.cancelButton}
+                >
+                  <Text>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={async () => {
+                    try {
+                      setIsLoading(true);
+                      await teamApi.deleteTeam(teamId, userId);
+                      setShowConfirmModal(false);
+                      router.push("/Team/Main");
+                    } catch (e) {
+                      console.error("Failed to delete team:", e);
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }}
+                  style={styles.deleteButton}
+                >
+                  <Text style={{ color: "white" }}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -502,5 +569,34 @@ const styles = StyleSheet.create({
   menuText: {
     paddingVertical: 5,
     textAlign: "center",
+  },
+  modalOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    height: "100%",
+  },
+  modalBox: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 10,
+    width: 300,
+  },
+  cancelButton: {
+    padding: 10,
+    backgroundColor: "#ccc",
+    borderRadius: 5,
+    marginRight: 10,
+  },
+  deleteButton: {
+    padding: 10,
+    backgroundColor: "red",
+    borderRadius: 5,
   },
 });

@@ -23,16 +23,28 @@ const teamApi = {
       params: { userId },
     });
   },
-  updateTeam(teamId: string, userId:string, name:string, description:string) {
-    const url = "/teams/"+teamId+"?userId="+userId;
-    const body = {
-        name: name,
-        description: description
-    };
-    return axiosInstance.patch(url, body, {
-        params: { teamId,userId }
-    });
-}
+updateTeam(teamId: string, userId: string, name?: string, description?: string) {
+  const url = "/teams/" + teamId + "?userId=" + userId;
+
+  // Tạo body chỉ với những field không undefined
+  const body: any = {};
+  if (name !== undefined) body.name = name;
+  if (description !== undefined) body.description = description;
+
+  return axiosInstance.patch(url, body, {
+    params: { teamId, userId },
+  });
+
+
+},
+
+deleteTeam(teamId: string, userId: string) {
+  const url = "/teams/"+teamId+"?userId="+userId;
+  return axiosInstance.delete(url, {
+    params: { userId },
+  });
+},
+
 
 
 }
