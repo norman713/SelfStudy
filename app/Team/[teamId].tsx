@@ -120,8 +120,40 @@ export default function TeamInfo() {
   };
 
   // Handle member removal
-  const handleRemoveMember = (id: number) => {
-    setMembers(members.filter((member) => member.id !== id));
+  const handleRemoveMember = async (memberId: string) => {
+    if (!teamId || !userId) return; // Ensure teamId and userId are available
+
+    try {
+      setIsLoading(true); // Set loading state to true
+      // Call the deleteMember API to remove the member
+      await memberApi.deleteMember(userId, teamId, memberId);
+      // Remove the member from the state after successful deletion
+      setMembers(members.filter((member) => member.userId !== memberId));
+      Alert.alert("Success", "Member removed successfully.");
+    } catch (error) {
+      console.error("Error removing member:", error);
+      Alert.alert("Error", "Failed to remove member.");
+    } finally {
+      setIsLoading(false); // Set loading state to false
+    }
+  };
+
+  // Handle member change role
+  const handleRoleMember = async (memberId: string) => {
+    if (!teamId || !userId) return; // Ensure teamId and userId are available
+
+    try {
+      setIsLoading(true); // Set loading state to true
+      await memberApi.updateRole(userId, teamId, memberId);
+      // Remove the member from the state after successful deletion
+      setMembers(members.filter((member) => member.userId !== memberId));
+      Alert.alert("Success", "Member removed successfully.");
+    } catch (error) {
+      console.error("Error removing member:", error);
+      Alert.alert("Error", "Failed to remove member.");
+    } finally {
+      setIsLoading(false); // Set loading state to false
+    }
   };
 
   // Toggle show members
@@ -139,8 +171,6 @@ export default function TeamInfo() {
     if (!teamId || !userId) return;
 
     const trimmedName = newTeamName.trim();
-
-    // Nếu không thay đổi thì bỏ qua
     if (trimmedName === teamInfo?.name) {
       setIsEditing(false);
       return;
@@ -162,7 +192,7 @@ export default function TeamInfo() {
   };
 
   const [showMenu, setShowMenu] = useState(false); // State for toggling menu visibility
-  const [activeMemberId, setActiveMemberId] = useState<number | null>(null); // Track which member's menu is active
+  const [activeMemberId, setActiveMemberId] = useState<number | null>(null);
   // Handle the toggle for menu visibility
   const toggleMenu = (memberId: number) => {
     if (activeMemberId === memberId) {
@@ -181,9 +211,42 @@ export default function TeamInfo() {
     setModalVisible(false); // Close the profile modal
   };
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  console.log("team id:", teamId);
 
-  // Navigate to SearchScreen and pass members data as query params (optional)
+  // handle reset code
+  const handleResetCode = async () => {
+    if (!teamId || !userId) return;
+
+    setIsLoading(true);
+    try {
+      await teamApi.resetCode(teamId, userId); // Call the resetCode API
+      Alert.alert("Success", "Team code has been reset successfully!");
+      // Optionally, you can reload team info or perform other updates
+    } catch (error) {
+      console.error("Error resetting team code:", error);
+      Alert.alert("Error", "Failed to reset team code.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  // handle leave team
+  const handleLeaveTeam = async () => {
+    if (!userId || !teamId) return;
+
+    try {
+      setIsLoading(true);
+      await memberApi.leaveTeam(userId, teamId);
+
+      Alert.alert("Success", "You have left the team.");
+      // Optionally, navigate away from the current page
+      router.push("/Team/Main");
+    } catch (error) {
+      console.error("Error leaving the team:", error);
+      Alert.alert("Error", "Failed to leave the team.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView>
       <View style={styles.container}>
@@ -244,7 +307,9 @@ export default function TeamInfo() {
 
             {/* Show the reload icon only if the role is CREATOR */}
             {role === "CREATOR" && (
-              <Ionicons name="reload" size={15} color="#7AB2D3" />
+              <TouchableOpacity onPress={handleResetCode} disabled={isLoading}>
+                <Ionicons name="reload" size={15} color="#7AB2D3" />
+              </TouchableOpacity>
             )}
           </View>
         )}
@@ -306,25 +371,47 @@ export default function TeamInfo() {
                       source={{ uri: item.avatarUrl }}
                       style={styles.memberAvatar}
                     />
-                    <Text style={styles.memberName}>{item.username}</Text>
+                    <View style={{ gap: 5 }}>
+                      <Text style={styles.memberName}>{item.username}</Text>
+                      <Text
+                        style={{ color: "rgba(0, 0, 0, 0.5)", fontSize: 12 }}
+                      >
+                        {item.role}
+                      </Text>
+                    </View>
                   </View>
-                  <TouchableOpacity onPress={() => toggleMenu(item.userId)}>
-                    <Entypo
-                      name="dots-three-horizontal"
-                      size={24}
-                      color="black"
-                    />
-                  </TouchableOpacity>
+
+                  {/* Ẩn "..." nếu role là CREATOR, và ẩn luôn "..." và "Update role" nếu role là ADMIN */}
+                  {((role === "CREATOR" && item.role !== "CREATOR") ||
+                    (role === "ADMIN" && item.role === "MEMBER")) && (
+                    <TouchableOpacity onPress={() => toggleMenu(item.userId)}>
+                      <Entypo
+                        name="dots-three-horizontal"
+                        size={24}
+                        color="black"
+                      />
+                    </TouchableOpacity>
+                  )}
 
                   {showMenu && activeMemberId === item.userId && (
                     <View style={styles.menu}>
                       <TouchableOpacity onPress={() => handleProfileView(item)}>
                         <Text>View profile</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity>
-                        <Text>Update role</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity>
+
+                      {/* Kiểm tra và ẩn "Update role" nếu role là ADMIN */}
+                      {role === "CREATOR" && (
+                        <TouchableOpacity
+                          onPress={() => handleRoleMember(item.userId)}
+                        >
+                          <Text>Update role</Text>
+                        </TouchableOpacity>
+                      )}
+
+                      {/* Remove Member Button */}
+                      <TouchableOpacity
+                        onPress={() => handleRemoveMember(item.userId)}
+                      >
                         <Text>Remove</Text>
                       </TouchableOpacity>
                     </View>
@@ -348,7 +435,7 @@ export default function TeamInfo() {
           {/* Leave Team Button */}
           <TouchableOpacity
             style={styles.button}
-            onPress={() => console.log("Leave team clicked")}
+            onPress={handleLeaveTeam} // Call handleLeaveTeam when pressed
           >
             <MaterialCommunityIcons name="exit-to-app" size={24} color="red" />
             <Text style={styles.buttonText}>Leave team</Text>
@@ -554,6 +641,7 @@ const styles = StyleSheet.create({
   menu: {
     position: "absolute",
     backgroundColor: "white",
+    gap: 5,
     top: 30,
     right: -50,
     borderRadius: 5,

@@ -34,10 +34,13 @@ updateTeam(teamId: string, userId: string, name?: string, description?: string) 
   return axiosInstance.patch(url, body, {
     params: { teamId, userId },
   });
-
-
 },
 
+resetCode(teamId:string, userId:string ){
+  const url="/teams/reset/"+teamId+"?userId="+userId;
+  return axiosInstance.patch(url);
+
+},
 deleteTeam(teamId: string, userId: string) {
   const url = "/teams/"+teamId+"?userId="+userId;
   return axiosInstance.delete(url, {
