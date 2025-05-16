@@ -7,6 +7,7 @@ import {
   ScrollView,
   Text,
   Alert,
+  FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import CustomButton from "@/components/CustomButton";
@@ -60,10 +61,9 @@ export default function TeamScreen() {
               id: item.id,
               name: item.name,
               isAdmin: item.managedByUser,
-              imageSource:
-                "https://cdn.pixabay.com/photo/2024/05/26/10/15/bird-8788491_1280.jpg",
+              imageSource: require("../../assets/images/imageTeam.jpg"),
             }))
-          : []; // Nếu teams không phải mảng, trả về mảng rỗng
+          : [];
         setTeams(data);
         setFilteredTeams(data); // Đặt filtered teams
       } catch (error) {
@@ -120,8 +120,8 @@ export default function TeamScreen() {
         style={{
           alignItems: "center",
           marginVertical: 10,
+          paddingHorizontal: 10,
           width: "100%",
-          zIndex: -1,
         }}
       >
         <SearchBar
@@ -140,7 +140,6 @@ export default function TeamScreen() {
             backgroundColor: "#1E282D",
             borderRadius: 5,
             padding: 5,
-            gap: 5,
           }}
         >
           <ToggleTabButton
@@ -160,7 +159,7 @@ export default function TeamScreen() {
             title="Join a team"
             fontSize={16}
             iconLeft={
-              <Ionicons name="add-circle-sharp" size={20} color="#fff" />
+              <Ionicons name="add-circle-sharp" size={25} color="#fff" />
             }
             onPress={() => setShowJoinPopup(true)}
             color="primary"
@@ -169,26 +168,23 @@ export default function TeamScreen() {
       </View>
 
       <View style={styles.teamList}>
-        <ScrollView
+        <FlatList
+          data={getVisibleTeams()}
+          keyExtractor={(team) => team.id.toString()} // đảm bảo key là string
           contentContainerStyle={{ paddingBottom: 40 }}
           showsVerticalScrollIndicator={false}
-        >
-          {getVisibleTeams().map((team) => {
-            return (
-              <TeamItem
-                key={team.id}
-                title={team.name}
-                imageSource={team.imageSource}
-                isAdmin={team.isAdmin} // Check giá trị isAdmin
-                onPress={() => {
-                  router.push(`/Team/${team.id}?userId=${userId}`);
-                }}
-              />
-            );
-          })}
-        </ScrollView>
+          renderItem={({ item: team }) => (
+            <TeamItem
+              title={team.name}
+              imageSource={team.imageSource}
+              isAdmin={team.isAdmin}
+              onPress={() => {
+                router.push(`/Team/${team.id}?userId=${userId}`);
+              }}
+            />
+          )}
+        />
       </View>
-
       {/* Popup join team */}
       <JoinPopup
         visible={showJoinPopup}
@@ -213,40 +209,23 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "column",
     alignItems: "center",
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: "#333",
-    paddingHorizontal: 10, // Đảm bảo khoảng cách giữa chữ và biên
+    backgroundColor: "#FFFFFF",
+    gap: 20,
   },
   tagsContainer: {
     flexDirection: "row",
-    paddingVertical: 10,
     width: "100%",
     justifyContent: "space-between",
-    marginBottom: 10, // Thêm khoảng cách dưới để các phần tử không bị dính vào nhau
+    paddingHorizontal: 10,
   },
   teamList: {
     flex: 1,
     width: "100%",
   },
-  tabBarItem: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 5,
-  },
-
-  // Responsive design for smaller screens
   smallScreen: {
-    fontSize: width < 360 ? 14 : 16, // Giảm fontSize nếu màn hình nhỏ
+    fontSize: width < 360 ? 14 : 16,
   },
-
-  // Điều chỉnh padding/margin khi màn hình nhỏ
   smallPadding: {
-    paddingHorizontal: width < 360 ? 8 : 15, // Đổi padding theo kích thước màn hình
+    paddingHorizontal: width < 360 ? 8 : 15,
   },
 });

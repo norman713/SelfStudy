@@ -40,6 +40,7 @@ function SearchBar<T extends Record<string, any>>({
 
 const styles = StyleSheet.create({
   container: {
+    width: "100%",
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#EDEDED",

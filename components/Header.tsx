@@ -80,7 +80,7 @@ export default function Header({
   };
 
   return (
-    <View>
+    <View style={{ width: "100%" }}>
       <View style={styles.container}>
         {showMenu && (
           <LinearGradient
@@ -153,6 +153,7 @@ export default function Header({
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
+    display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: 10,

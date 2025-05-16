@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -28,6 +28,7 @@ interface Member {
   avatarUrl: string; // URL of the user's avatar image
   role: string; // Role of the user (e.g., "CREATOR", "ADMIN", "MEMBER")
 }
+
 export default function TeamInfo() {
   const router = useRouter();
   const { teamId } = useLocalSearchParams<{ teamId: string }>();
@@ -137,11 +138,6 @@ export default function TeamInfo() {
     }
   };
 
-  // Toggle show members
-  const toggleShowMembers = () => {
-    setShowMembers(!showMembers);
-  };
-
   // Handle name editing
   const handleEditName = () => {
     setIsEditing(true);
@@ -173,6 +169,7 @@ export default function TeamInfo() {
   };
 
   const [showMenu, setShowMenu] = useState(false); // State for toggling menu visibility
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [activeMemberId, setActiveMemberId] = useState<number | null>(null);
   // Handle the toggle for menu visibility
   const toggleMenu = (memberId: number) => {
@@ -184,8 +181,9 @@ export default function TeamInfo() {
     }
   };
   const handleProfileView = (member: Member) => {
-    setActiveMember(member); // Set the selected member
-    setModalVisible(true); // Show the profile modal
+    // Set the selected member
+    setActiveMember(member);
+    setModalVisible(true);
   };
 
   const handleCloseModal = () => {
@@ -303,26 +301,28 @@ export default function TeamInfo() {
   // Fetch user info
   useEffect(() => {
     const fetchUserInfo = async () => {
-      if (!userId) return; // Make sure userId is available
-      setIsLoading(true);
+      if (!userId) {
+        Alert.alert("Error", "User ID is missing."); // Hiện lỗi khi userId không có
+        return;
+      }
 
+      setIsLoading(true);
       try {
-        const response = await userApi.getUserInfo(member.userId);
-        console.log("member info:", response);
+        const response = await userApi.getUserInfo(userId);
         setUserInfo(response);
       } catch (error) {
         console.error("Error fetching user info:", error);
         Alert.alert("Error", "Failed to load user information.");
       } finally {
-        setIsLoading(false); // Set loading state to false after fetching data
+        setIsLoading(false);
       }
     };
 
     fetchUserInfo();
-  }, [userId]); // Dependency array includes userId so it runs when userId changes
+  }, [userId]);
 
   return (
-    <SafeAreaView>
+    <SafeAreaView style={{ display: "flex", flex: 1 }}>
       <View style={styles.container}>
         {/* Team Avatar */}
         <View style={styles.avatarContainer}>
@@ -412,12 +412,6 @@ export default function TeamInfo() {
             </TouchableOpacity>
           )}
         </View>
-
-        {/* Description */}
-        {/* <TouchableOpacity onPress={navigateToUpdateDescription}>
-          <Text style={styles.description}>{teamInfo?.description}</Text>
-        </TouchableOpacity> */}
-
         {/* Team Description */}
         <View style={styles.teamDescriptionContainer}>
           {isEditingDescription ? (
@@ -455,64 +449,76 @@ export default function TeamInfo() {
 
           {/* Members List */}
           {showMembers && (
-            <FlatList
-              data={members}
-              keyExtractor={(item) => item.userId.toString()}
-              renderItem={({ item }) => (
-                <View style={styles.memberItem}>
-                  <View style={styles.memberDetails}>
-                    <Image
-                      source={{ uri: item.avatarUrl }}
-                      style={styles.memberAvatar}
-                    />
-                    <View style={{ gap: 5 }}>
-                      <Text style={styles.memberName}>{item.username}</Text>
-                      <Text
-                        style={{ color: "rgba(0, 0, 0, 0.5)", fontSize: 12 }}
-                      >
-                        {item.role}
-                      </Text>
+            <View>
+              <FlatList
+                data={members}
+                keyExtractor={(item) => item.userId.toString()}
+                renderItem={({ item }) => (
+                  <View style={styles.memberItem}>
+                    <View style={styles.memberDetails}>
+                      <Image
+                        source={{ uri: item.avatarUrl }}
+                        style={styles.memberAvatar}
+                      />
+                      <View style={{ gap: 5 }}>
+                        <Text style={styles.memberName}>{item.username}</Text>
+                        <Text
+                          style={{ color: "rgba(0, 0, 0, 0.5)", fontSize: 12 }}
+                        >
+                          {item.role}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* show .. for all role */}
+                    <View
+                      style={{
+                        flexDirection: "column",
+                        alignItems: "flex-end",
+                      }}
+                    >
+                      {
+                        <TouchableOpacity
+                          onPress={() => toggleMenu(item.userId)}
+                        >
+                          <Entypo
+                            name="dots-three-horizontal"
+                            size={24}
+                            color="black"
+                          />
+                        </TouchableOpacity>
+                      }
+
+                      {showMenu && activeMemberId === item.userId && (
+                        <View style={styles.menu}>
+                          <TouchableOpacity
+                            onPress={() => handleProfileView(item)}
+                          >
+                            <Text>View profile</Text>
+                          </TouchableOpacity>
+
+                          {/* Kiểm tra và ẩn "Update role" nếu role là ADMIN */}
+                          {role === "CREATOR" && (
+                            <TouchableOpacity
+                              onPress={() => handleRoleMember(item.userId)}
+                            >
+                              <Text>Update role</Text>
+                            </TouchableOpacity>
+                          )}
+
+                          {/* Remove Member Button */}
+                          <TouchableOpacity
+                            onPress={() => handleRemoveMember(item.userId)}
+                          >
+                            <Text>Remove</Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
                     </View>
                   </View>
-
-                  {/* Ẩn "..." nếu role là CREATOR, và ẩn luôn "..." và "Update role" nếu role là ADMIN */}
-                  {((role === "CREATOR" && item.role !== "CREATOR") ||
-                    (role === "ADMIN" && item.role === "MEMBER")) && (
-                    <TouchableOpacity onPress={() => toggleMenu(item.userId)}>
-                      <Entypo
-                        name="dots-three-horizontal"
-                        size={24}
-                        color="black"
-                      />
-                    </TouchableOpacity>
-                  )}
-
-                  {showMenu && activeMemberId === item.userId && (
-                    <View style={styles.menu}>
-                      <TouchableOpacity onPress={() => handleProfileView(item)}>
-                        <Text>View profile</Text>
-                      </TouchableOpacity>
-
-                      {/* Kiểm tra và ẩn "Update role" nếu role là ADMIN */}
-                      {role === "CREATOR" && (
-                        <TouchableOpacity
-                          onPress={() => handleRoleMember(item.userId)}
-                        >
-                          <Text>Update role</Text>
-                        </TouchableOpacity>
-                      )}
-
-                      {/* Remove Member Button */}
-                      <TouchableOpacity
-                        onPress={() => handleRemoveMember(item.userId)}
-                      >
-                        <Text>Remove</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </View>
-              )}
-            />
+                )}
+              />
+            </View>
           )}
         </View>
 
@@ -556,7 +562,7 @@ export default function TeamInfo() {
           <ProfileCard
             visible={modalVisible}
             onClose={handleCloseModal}
-            user={activeMember} // Passing the selected user's data to the ProfileCard
+            id={activeMember.userId} // Passing the selected user's data to the ProfileCard
           />
         )}
 
@@ -630,9 +636,11 @@ const styles = StyleSheet.create({
   container: {
     alignItems: "center",
     padding: 20,
-    borderRadius: 10,
-    marginBottom: 20,
     gap: 10,
+    backgroundColor: "#FFFFFF",
+    display: "flex",
+    flex: 1,
+    height: "100%",
   },
   avatarContainer: {
     position: "relative",
@@ -735,18 +743,13 @@ const styles = StyleSheet.create({
     width: "100%",
     gap: 10,
   },
-  list: {
-    gap: 20,
-    justifyContent: "flex-start",
-    width: "100%",
-    marginTop: 20,
-  },
   memberItem: {
+    position: "relative",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     width: "100%",
-    marginBottom: 10,
+    marginBottom: 30,
   },
   memberDetails: {
     flexDirection: "row",
@@ -783,22 +786,24 @@ const styles = StyleSheet.create({
   buttom: {
     gap: 10,
     width: "100%",
+    display: "flex",
+    flex: 1,
   },
   menu: {
-    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: "white",
-    gap: 5,
-    top: 30,
-    right: -50,
+    padding: 10,
     borderRadius: 5,
-    padding: 8,
-    width: 150,
-    shadowColor: "#000000",
-    shadowOffset: { width: 2, height: 2 },
-    shadowOpacity: 0.2,
+    elevation: 5,
+    zIndex: 1000,
+    justifyContent: "flex-end",
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
     shadowRadius: 10,
-    elevation: 10,
-    zIndex: 1000, // Explicitly set z-index for iOS (if needed)
+    shadowOffset: { width: 0, height: 5 },
   },
   menuText: {
     paddingVertical: 5,
@@ -806,10 +811,10 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    // top: 0,
+    // left: 0,
+    // right: 0,
+    // bottom: 0,
     backgroundColor: "rgba(0,0,0,0.3)",
     justifyContent: "center",
     alignItems: "center",
@@ -831,6 +836,5 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: 10,
     backgroundColor: "red",
-    borderRadius: 5,
   },
 });

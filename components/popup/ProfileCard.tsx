@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Modal,
   View,
@@ -6,63 +6,90 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient"; // Import LinearGradient from expo-linear-gradient
+import userApi from "@/api/userApi";
 
 interface ProfileCardProps {
   visible: boolean;
   onClose: () => void;
-  user: {
-    id: string;
-    username: string;
-    avatarUrl: string;
-    dateOfBirth: string;
-    gender: string;
-  };
+  id: string;
+}
+
+interface User {
+  userId: string;
+  username: string;
+  avatarUrl: string;
+  role: string;
+  dateOfBirth: string;
+  gender: string;
 }
 
 export default function ProfileCard({
   visible,
   onClose,
-  user,
+  id,
 }: ProfileCardProps) {
-  if (!visible) return null; // If profile card is not visible, return null to hide
+  const [userInfo, setUserInfo] = useState<any>(null);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchTeamInfo = async () => {
+      try {
+        console.log("in useEffect:", id);
+        const response = await userApi.getUserInfo(id);
+        const user = {
+          userId: response.id,
+          username: response.username,
+          dateOfBirth: response.dateOfBirth,
+          gender: response.gender,
+          avatarUrl: "https://randomuser.me/api/portraits/lego/1.jpg",
+        };
+
+        setUserInfo(user);
+      } catch (error) {
+        Alert.alert("Error", "Failed to load user information.");
+      }
+    };
+
+    fetchTeamInfo();
+  }, [id]);
+
+  if (!visible || !userInfo) return null; // 🔥 Kiểm tra cả `visible` và `userInfo`
 
   return (
     <Modal visible={visible} transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.popup}>
-          {/* Gradient Background at the top */}
           <LinearGradient
-            colors={["#7AB2D3", "#B9E5E8"]} // Gradient colors (light blue to lighter blue)
+            colors={["#7AB2D3", "#B9E5E8"]}
             style={styles.gradient}
           >
-            {/* Close Button */}
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
               <Ionicons name="close" size={24} color="#fff" />
             </TouchableOpacity>
           </LinearGradient>
 
-          {/* Profile Info */}
           <View style={styles.profileContainer}>
             <Image
               source={{
-                uri: user.avatarUrl,
+                uri: userInfo.avatarUrl,
               }}
               style={styles.avatar}
             />
-            <Text style={styles.userName}>{user.username}</Text>
+            <Text style={styles.userName}>{userInfo.username}</Text>
 
-            {/* Birthdate and Gender */}
             <View style={styles.infoContainer}>
               <Text style={styles.infoText}>
                 <Ionicons name="calendar" size={16} color="#000" />{" "}
-                {user.dateOfBirth}
+                {userInfo.dateOfBirth}
               </Text>
               <Text style={styles.infoText}>
                 <Ionicons name="male-female" size={16} color="#000" />{" "}
-                {user.gender}
+                {userInfo.gender}
               </Text>
             </View>
           </View>
