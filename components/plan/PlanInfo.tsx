@@ -46,108 +46,101 @@ export default function APlan({
     new Date(endDate.replace(" ", "T"))
   );
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
-  const [showRemindTimePicker, setShowRemindTimePicker] = useState(false);
-  const [remindTime, setRemindTime] = useState(new Date(0, 0, 0, 0, 30, 0));
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
 
-  // Sync remindTime when remindBefore changes
   useEffect(() => {
-    setRemindTime(
-      new Date(
-        0,
-        0,
-        0,
-        remindBefore.hours,
-        remindBefore.minutes,
-        remindBefore.seconds
-      )
-    );
-  }, [remindBefore]);
+    if (startDate) {
+      setStartDateForm(new Date(startDate.replace(" ", "T")));
+    }
+  }, [startDate]);
 
-  // Initialize remindBefore from notifyBefore prop
+  useEffect(() => {
+    if (endDate) {
+      setEndDateForm(new Date(endDate.replace(" ", "T")));
+    }
+  }, [endDate]);
+
   useEffect(() => {
     if (notifyBefore) {
-      const parts = notifyBefore.split(":");
+      const time = notifyBefore.split(":");
       setRemindBefore({
-        hours: Number(parts[0]),
-        minutes: Number(parts[1]),
-        seconds: Number(parts[2]),
+        hours: Number(time.at(0)),
+        minutes: Number(time.at(1)),
+        seconds: Number(time.at(2)),
       });
     }
   }, [notifyBefore]);
 
-  // Notify parent when remindBefore changes and differs from notifyBefore
   useEffect(() => {
-    const time =
-      String(remindBefore.hours).padStart(2, "0") +
-      ":" +
-      String(remindBefore.minutes).padStart(2, "0") +
-      ":" +
-      String(remindBefore.seconds).padStart(2, "0");
-
-    if (time !== notifyBefore) {
-      handleChangeValue("notifyBefore", time);
-    }
-  }, [remindBefore, notifyBefore, handleChangeValue]);
-
-  // Notify parent when startDateForm changes and differs from startDate
-  useEffect(() => {
-    const newStart = formatDateToISOString(startDateForm);
-    if (newStart !== startDate) {
-      handleChangeValue("startDate", newStart);
-    }
-  }, [startDateForm, startDate, handleChangeValue]);
-
-  // Notify parent when endDateForm changes and differs from endDate
-  useEffect(() => {
-    const newEnd = formatDateToISOString(endDateForm);
-    if (newEnd !== endDate) {
-      handleChangeValue("endDate", newEnd);
+    const iso = formatDateToISOString(endDateForm);
+    if (iso !== endDate) {
+      handleChangeValue("endDate", iso);
     }
   }, [endDateForm, endDate, handleChangeValue]);
 
   const handleDateChange = (
     event: DateTimePickerEvent,
-    selected: Date | undefined,
-    field: "startDate" | "endDate"
+    selectedDate: Date | undefined,
+    field: string,
+    setShowPicker: React.Dispatch<React.SetStateAction<boolean>>
   ) => {
-    if (event.type === "set" && selected) {
-      if (field === "startDate") setStartDateForm(selected);
-      else setEndDateForm(selected);
+    setShowPicker(false);
+    if (event.type === "set" && selectedDate) {
+      if (field.startsWith("start")) setStartDateForm(selectedDate);
+      else setEndDateForm(selectedDate);
     }
-    // Hide all pickers
-    setShowStartDatePicker(false);
-    setShowEndDatePicker(false);
+  };
+
+  const handleTimeChange = (
+    event: DateTimePickerEvent,
+    selectedTime: Date | undefined,
+    field: string,
+    setShowPicker: React.Dispatch<React.SetStateAction<boolean>>
+  ) => {
+    setShowPicker(false);
+    if (event.type === "set" && selectedTime) {
+      if (field.startsWith("start")) setStartDateForm(selectedTime);
+      else setEndDateForm(selectedTime);
+    }
   };
 
   const handleRemindBeforeChange = (
     field: "hours" | "minutes" | "seconds",
     value: string
   ) => {
-    const num = parseInt(value, 10) || 0;
-    setRemindBefore((prev) => ({
-      ...prev,
-      [field]: Math.min(Math.max(num, 0), field === "hours" ? 24 : 60),
-    }));
+    const numericValue = parseInt(value, 10) || 0;
+    if (field === "hours") {
+      setRemindBefore((prev) => ({
+        ...prev,
+        hours: Math.min(Math.max(numericValue, 0), 24),
+      }));
+    } else if (field === "minutes" || field === "seconds") {
+      setRemindBefore((prev) => ({
+        ...prev,
+        [field]: Math.min(Math.max(numericValue, 0), 60),
+      }));
+    }
   };
 
   return (
     <View style={styles.container}>
       <TextInput
         style={styles.title}
-        value={name}
+        value={name} // với controlled component
         onChangeText={(text) => handleChangeValue("name", text)}
       />
 
       {status === "COMPLETE" ? (
         <Text style={styles.completeText}>
-          <Text style={styles.highlightText}>COMPLETE AT: </Text>
-          <Text>{formatDateTime(completeDate || "")}</Text>
+          <Text style={styles.highlightText}>COMPLETE AT: </Text>{" "}
+          {formatDateTime(completeDate ? completeDate : "")}
         </Text>
       ) : (
         <Text style={styles.incompleteText}>INCOMPLETE</Text>
       )}
-
+      {/* Description Field */}
       <View style={styles.fieldContainer}>
         <Text style={styles.label}>Description</Text>
         <TextInput
@@ -157,42 +150,137 @@ export default function APlan({
         />
       </View>
 
-      <View style={styles.fieldContainer}>
+      {/* Start Date */}
+      <View style={styles.fieldContainerRow}>
         <Text style={styles.label}>Start Date</Text>
-        <TouchableOpacity
-          style={styles.input}
-          onPress={() => setShowStartDatePicker(true)}
-        >
-          <Text>{startDateForm.toLocaleDateString()}</Text>
-        </TouchableOpacity>
-        {showStartDatePicker && (
-          <DateTimePicker
-            value={startDateForm}
-            mode="date"
-            display={Platform.OS === "ios" ? "spinner" : "default"}
-            onChange={(e, d) => handleDateChange(e, d, "startDate")}
-          />
-        )}
+        <View style={styles.rowContainer}>
+          <TouchableOpacity
+            style={styles.halfInput}
+            onPress={() => setShowStartDatePicker(true)}
+          >
+            <TextInput
+              style={styles.input}
+              defaultValue={startDateForm.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+              })}
+              editable={false}
+            />
+          </TouchableOpacity>
+
+          {showStartDatePicker && (
+            <DateTimePicker
+              value={startDateForm}
+              mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={(event, date) =>
+                handleDateChange(
+                  event,
+                  date,
+                  "startDate",
+                  setShowStartDatePicker
+                )
+              }
+            />
+          )}
+
+          {/* Start Time Picker */}
+          <TouchableOpacity
+            style={styles.halfInput}
+            onPress={() => setShowStartTimePicker(true)}
+          >
+            <TextInput
+              style={styles.input}
+              value={startDateForm.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              })}
+              editable={false}
+            />
+          </TouchableOpacity>
+
+          {showStartTimePicker && (
+            <DateTimePicker
+              value={startDateForm}
+              mode="time"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={(event, date) =>
+                handleTimeChange(
+                  event,
+                  date,
+                  "startDate",
+                  setShowStartTimePicker
+                )
+              }
+            />
+          )}
+        </View>
       </View>
 
-      <View style={styles.fieldContainer}>
+      {/* End Date */}
+
+      <View style={styles.fieldContainerRow}>
         <Text style={styles.label}>End Date</Text>
-        <TouchableOpacity
-          style={styles.input}
-          onPress={() => setShowEndDatePicker(true)}
-        >
-          <Text>{endDateForm.toLocaleDateString()}</Text>
-        </TouchableOpacity>
-        {showEndDatePicker && (
-          <DateTimePicker
-            value={endDateForm}
-            mode="date"
-            display={Platform.OS === "ios" ? "spinner" : "default"}
-            onChange={(e, d) => handleDateChange(e, d, "endDate")}
-          />
-        )}
+        <View style={styles.rowContainer}>
+          {/* End Date Picker */}
+          <TouchableOpacity
+            style={styles.halfInput}
+            onPress={() => setShowEndDatePicker(true)}
+          >
+            <TextInput
+              style={styles.input}
+              value={endDateForm.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+              })}
+              editable={false}
+            />
+          </TouchableOpacity>
+
+          {showEndDatePicker && (
+            <DateTimePicker
+              value={endDateForm}
+              mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={(event, date) =>
+                handleDateChange(event, date, "endDate", setShowEndDatePicker)
+              }
+            />
+          )}
+
+          {/* End Time Picker */}
+          <TouchableOpacity
+            style={styles.halfInput}
+            onPress={() => setShowEndTimePicker(true)}
+          >
+            <TextInput
+              style={styles.input}
+              value={endDateForm.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              })}
+              editable={false}
+            />
+          </TouchableOpacity>
+
+          {showEndTimePicker && (
+            <DateTimePicker
+              value={endDateForm}
+              mode="time"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={(event, date) =>
+                handleTimeChange(event, date, "endDate", setShowEndTimePicker)
+              }
+            />
+          )}
+        </View>
       </View>
 
+      {/* Remind Me Before Field */}
       <View style={styles.fieldContainer}>
         <Text style={styles.label}>Remind Me Before</Text>
         <View style={styles.remindContainer}>
@@ -201,7 +289,7 @@ export default function APlan({
             placeholder="HH"
             keyboardType="numeric"
             value={remindBefore.hours.toString()}
-            onChangeText={(v) => handleRemindBeforeChange("hours", v)}
+            onChangeText={(value) => handleRemindBeforeChange("hours", value)}
           />
           <Text style={styles.colon}>:</Text>
           <TextInput
@@ -209,7 +297,7 @@ export default function APlan({
             placeholder="MM"
             keyboardType="numeric"
             value={remindBefore.minutes.toString()}
-            onChangeText={(v) => handleRemindBeforeChange("minutes", v)}
+            onChangeText={(value) => handleRemindBeforeChange("minutes", value)}
           />
           <Text style={styles.colon}>:</Text>
           <TextInput
@@ -217,24 +305,9 @@ export default function APlan({
             placeholder="SS"
             keyboardType="numeric"
             value={remindBefore.seconds.toString()}
-            onChangeText={(v) => handleRemindBeforeChange("seconds", v)}
+            onChangeText={(value) => handleRemindBeforeChange("seconds", value)}
           />
         </View>
-        <TouchableOpacity
-          style={styles.input}
-          onPress={() => setShowRemindTimePicker(true)}
-        >
-          <Text>{remindTime.toLocaleTimeString()}</Text>
-        </TouchableOpacity>
-        {showRemindTimePicker && (
-          <DateTimePicker
-            value={remindTime}
-            mode="time"
-            is24Hour
-            display={Platform.OS === "ios" ? "spinner" : "default"}
-            // onChange={handleRemindBeforeChange}
-          />
-        )}
       </View>
     </View>
   );
