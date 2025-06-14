@@ -195,7 +195,7 @@ export default function TeamScreen() {
       <CreateTeamPopup
         visible={showCreatePopup}
         onClose={() => setShowCreatePopup(false)}
-        onSave={handleSaveNewTeam} // Gọi API khi người dùng tạo đội mới
+        onSave={handleSaveNewTeam}
       />
 
       {/* Nav Bar */}

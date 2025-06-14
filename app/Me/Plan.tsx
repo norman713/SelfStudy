@@ -9,7 +9,6 @@ import { Colors } from "@/constants/Colors";
 import { Calendar } from "react-native-calendars";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import PlanItem from "@/components/plan/PlanItem";
-// import LoadingScreen from "@/components/LoadingScreen";
 
 interface Plan {
   id: string;
@@ -22,48 +21,47 @@ interface Plan {
   progress: number;
   completeDate: string | null;
 }
+const mockPlans: Plan[] = [
+  {
+    id: "1",
+    name: "Design mobile UI",
+    description: "Create UI wireframes for new app",
+    startDate: "2025-05-13",
+    endDate: "2025-06-14",
+    notifyBefore: "1",
+    status: "In Progress",
+    progress: 0.4,
+    completeDate: null,
+  },
+  {
+    id: "2",
+    name: "Prepare pitch deck",
+    description: "Slides for investor meeting",
+    startDate: "2025-01-30",
+    endDate: "2025-06-20",
+    notifyBefore: "2",
+    status: "Not Started",
+    progress: 0.0,
+    completeDate: null,
+  },
+  {
+    id: "3",
+    name: "Deploy new API",
+    description: "Push backend to production",
+    startDate: "2025-06-13",
+    endDate: "2025-06-21",
+    notifyBefore: "1",
+    status: "Done",
+    progress: 1,
+    completeDate: "2025-04-30",
+  },
+];
 
 export default function Plan() {
   const { fontsLoaded } = useCustomFonts();
   const router = useRouter();
 
   if (!fontsLoaded) return null;
-
-  const mockPlans: Plan[] = [
-    {
-      id: "1",
-      name: "Design mobile UI",
-      description: "Create UI wireframes for new app",
-      startDate: "2025-04-30",
-      endDate: "2025-05-02",
-      notifyBefore: "1",
-      status: "In Progress",
-      progress: 0.4,
-      completeDate: null,
-    },
-    {
-      id: "2",
-      name: "Prepare pitch deck",
-      description: "Slides for investor meeting",
-      startDate: "2025-04-30",
-      endDate: "2025-05-01",
-      notifyBefore: "2",
-      status: "Not Started",
-      progress: 0.0,
-      completeDate: null,
-    },
-    {
-      id: "3",
-      name: "Deploy new API",
-      description: "Push backend to production",
-      startDate: "2025-04-30",
-      endDate: "2025-05-01",
-      notifyBefore: "1",
-      status: "Done",
-      progress: 1,
-      completeDate: "2025-04-30",
-    },
-  ];
 
   const [markedDatesArray, setMarkedDatesArray] = useState<string[]>([
     "2025-04-30",
@@ -76,20 +74,29 @@ export default function Plan() {
   const [todayPlanNum, setTodayPlanNum] = useState(0);
 
   useEffect(() => {
-    const today = new Date().toISOString().split("T")[0];
-    const todayPlans = mockPlans.filter((plan) => plan.startDate === today);
+    const today = new Date().toISOString().split("T")[0]; // Ngày hiện tại
+    const todayPlans = mockPlans.filter(
+      (plan) => plan.startDate <= today && plan.endDate >= today
+    );
     setTodayPlanNum(todayPlans.length);
     setSelectDatePlans(todayPlans);
-    // setSelectedDate(today);
   }, []);
 
   useEffect(() => {
     if (!selectedDate) return;
+
+    // Lọc kế hoạch dựa trên selectedDate nằm trong phạm vi startDate đến endDate
     const filteredPlans = mockPlans.filter(
-      (plan) => plan.startDate === selectedDate
+      (plan) => plan.startDate <= selectedDate && plan.endDate >= selectedDate
     );
     setSelectDatePlans(filteredPlans);
   }, [selectedDate]);
+
+  // markedDatesArray
+  useEffect(() => {
+    const deadlines = mockPlans.map((plan) => plan.endDate);
+    setMarkedDatesArray(deadlines);
+  }, [mockPlans]);
 
   const getMarkedDates = () => {
     const markedDates: Record<string, any> = {};
@@ -112,9 +119,9 @@ export default function Plan() {
 
     return markedDates;
   };
-
-  const handlePlanPress = (id: string) => {
-    router.push(`/Authen/Login`); // thay đổi nếu cần điều hướng khác
+  const handlePlanPress = (planId: string) => {
+    // Điều hướng đến trang PlanDetail và truyền planId qua URL
+    router.push(`/Me/PlanDetail?planId=${planId}`);
   };
 
   return (
@@ -150,6 +157,7 @@ export default function Plan() {
           ))}
         </View>
       </ScrollView>
+
       <BottomNavBar onAddPress={() => router.push("/Authen/Login")} />
     </SafeAreaView>
   );

@@ -9,7 +9,6 @@ import {
   Platform,
 } from "react-native";
 import { ReactNode } from "react";
-import { Colors } from "@/constants/Colors";
 import useCustomFonts from "@/hooks/useCustomFonts";
 
 interface CustomButtonProps {
