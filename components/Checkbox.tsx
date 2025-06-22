@@ -6,7 +6,6 @@ interface CheckboxProps {
   onToggle: (isChecked: boolean) => void;
   isChecked: boolean;
 }
-
 export default function Checkbox({ onToggle, isChecked }: CheckboxProps) {
   const handlePress = () => {
     onToggle(!isChecked);
