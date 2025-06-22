@@ -8,14 +8,12 @@ const Navigation = createNativeStackNavigator();
 export default function RootLayout() {
   return (
     <NavigationProvider>
-      {" "}
       <TeamProvider>
-        {" "}
         <Stack
           screenOptions={{
             headerShown: false,
           }}
-        ></Stack>
+        />
       </TeamProvider>
     </NavigationProvider>
   );

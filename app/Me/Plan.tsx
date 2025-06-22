@@ -27,7 +27,7 @@ const mockPlans: Plan[] = [
     name: "Design mobile UI",
     description: "Create UI wireframes for new app",
     startDate: "2025-05-13",
-    endDate: "2025-06-14",
+    endDate: "2025-06-30",
     notifyBefore: "1",
     status: "In Progress",
     progress: 0.4,
@@ -158,7 +158,7 @@ export default function Plan() {
         </View>
       </ScrollView>
 
-      <BottomNavBar onAddPress={() => router.push("/Authen/Login")} />
+      <BottomNavBar onAddPress={() => router.push("/Me/AddPlan")} />
     </SafeAreaView>
   );
 }
