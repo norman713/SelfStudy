@@ -21,6 +21,7 @@ import teamApi from "@/api/teamApi";
 import memberApi from "@/api/memberApi";
 import { useTeamContext } from "@/context/TeamContext";
 import userApi from "@/api/userApi";
+import Header from "@/components/Header";
 
 interface Member {
   userId: string; // Unique identifier for the user
@@ -322,7 +323,16 @@ export default function TeamInfo() {
   }, [userId]);
 
   return (
-    <SafeAreaView style={{ display: "flex", flex: 1 }}>
+    <SafeAreaView
+      style={{
+        flex: 1,
+        flexDirection: "column",
+
+        backgroundColor: "#FFFFFF",
+        gap: 20,
+      }}
+    >
+      <Header />
       <View style={styles.container}>
         {/* Team Avatar */}
         <View style={styles.avatarContainer}>

@@ -17,8 +17,8 @@ export default function Sidebar({ onClose }: SidebarProps) {
     bottomNavPath === "Team"
       ? [
           {
-            id: "Management",
-            label: "Management",
+            id: "Main",
+            label: "Main",
             icon: (
               <MaterialCommunityIcons
                 name="clipboard-list-outline"
@@ -40,6 +40,17 @@ export default function Sidebar({ onClose }: SidebarProps) {
             icon: (
               <MaterialCommunityIcons
                 name="file-document-outline"
+                size={24}
+                color="#1E282D"
+              />
+            ),
+          },
+          {
+            id: "Chat",
+            label: "Chat",
+            icon: (
+              <MaterialCommunityIcons
+                name="chat-outline"
                 size={24}
                 color="#1E282D"
               />
