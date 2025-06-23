@@ -1,7 +1,9 @@
 import axios, { AxiosInstance } from 'axios';
 
+const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: 'http://128.1.5.13:8080/api',
+  baseURL: apiUrl,
  
   headers: {
     'Content-Type': 'application/json',
