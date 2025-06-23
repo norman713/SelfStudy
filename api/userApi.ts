@@ -18,7 +18,11 @@ const userApi = {
     const body = { email, password };
     return axiosInstance.post(url, body);
   },
-
+  register(username: string, email: string, password: string) {
+    const url = "api/auth/register";
+    const body = { username, email, password };
+    return axiosInstance.post(url, body);
+  },
 
 }
 export default userApi;
