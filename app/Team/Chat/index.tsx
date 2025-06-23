@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import Header from "@/components/Header";
 
 const CURRENT_USER_ID = "u1";
 const AVATAR_URL =
@@ -81,6 +82,8 @@ export default function ChatScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Header />
+
       {/* Header có thêm avatar team */}
       <LinearGradient
         colors={["#6BA2E3", "#9BD3F0"]}
@@ -88,10 +91,6 @@ export default function ChatScreen() {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
       >
-        {/* Menu icon */}
-        <TouchableOpacity style={styles.headerIcon}>
-          <MaterialIcons name="menu" size={24} color="#fff" />
-        </TouchableOpacity>
         {/* Avatar team */}
         <Image source={{ uri: teamAvatarUrl }} style={styles.teamAvatar} />
         {/* Tên team và số thành viên */}
