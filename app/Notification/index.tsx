@@ -14,7 +14,8 @@ import BottomNavBar from "@/components/navigation/ButtonNavBar";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const Noti: React.FC = () => {
-  const [notifications, setNotifications] = useState([
+  const [selectedTab, setSelectedTab] = useState<"plan" | "invitation">("plan");
+  const [notifications, setNotifications] = useState<any[]>([
     {
       id: 1,
       name: "PLAN 1",
@@ -40,16 +41,12 @@ const Noti: React.FC = () => {
   ]);
 
   const markAllAsRead = () => {
-    setNotifications((prevNotifications) =>
-      prevNotifications.map((notif) => ({ ...notif, isRead: true }))
-    );
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
   };
 
   const toggleReadStatus = (id: number) => {
-    setNotifications((prevNotifications) =>
-      prevNotifications.map((notif) =>
-        notif.id === id ? { ...notif, isRead: !notif.isRead } : notif
-      )
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, isRead: !n.isRead } : n))
     );
   };
 
@@ -61,14 +58,50 @@ const Noti: React.FC = () => {
     console.log(`Declined invitation for notification ID: ${id}`);
   };
 
+  // Filter notifications based on selected tab
+  const filteredNotifications = notifications.filter((notif) =>
+    selectedTab === "invitation" ? "people" in notif : !("people" in notif)
+  );
+
   return (
     <SafeAreaView style={styles.container}>
+      {/* Tab Bar */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, selectedTab === "plan" && styles.activeTab]}
+          onPress={() => setSelectedTab("plan")}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              selectedTab === "plan" && styles.activeTabText,
+            ]}
+          >
+            Plans
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, selectedTab === "invitation" && styles.activeTab]}
+          onPress={() => setSelectedTab("invitation")}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              selectedTab === "invitation" && styles.activeTabText,
+            ]}
+          >
+            Invitations
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Content */}
       <View style={styles.content}>
         <TouchableOpacity
           style={styles.markAllContainer}
           onPress={markAllAsRead}
         >
-          <Text style={styles.markAllText}>Mark as read all</Text>
+          <Text style={styles.markAllText}>Mark all as read</Text>
           <MaterialIcons
             name="check-circle-outline"
             size={24}
@@ -76,17 +109,8 @@ const Noti: React.FC = () => {
           />
         </TouchableOpacity>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          {notifications.map((notif) =>
-            notif.id === 2 ? (
-              <PlanWill
-                key={notif.id}
-                name={notif.name}
-                createAt={notif.createAt}
-                expiredTime={notif.expiredTime}
-                isRead={notif.isRead}
-                onToggleRead={() => toggleReadStatus(notif.id)}
-              />
-            ) : notif.id === 3 ? (
+          {filteredNotifications.map((notif) =>
+            "people" in notif ? (
               <Invite
                 key={notif.id}
                 name={notif.name}
@@ -97,6 +121,15 @@ const Noti: React.FC = () => {
                 onToggleRead={() => toggleReadStatus(notif.id)}
                 onAccept={() => handleAccept(notif.id)}
                 onDecline={() => handleDecline(notif.id)}
+              />
+            ) : notif.expiredTime ? (
+              <PlanWill
+                key={notif.id}
+                name={notif.name}
+                createAt={notif.createAt}
+                expiredTime={notif.expiredTime}
+                isRead={notif.isRead}
+                onToggleRead={() => toggleReadStatus(notif.id)}
               />
             ) : (
               <PlanCard
@@ -121,19 +154,34 @@ const Noti: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "white",
+  container: { flex: 1, backgroundColor: "white" },
+  tabContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    backgroundColor: "#f0f0f0",
   },
-  content: {
+  tab: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 70,
+    paddingVertical: 12,
+    alignItems: "center",
   },
+  activeTab: {
+    borderBottomWidth: 3,
+    borderBottomColor: "#7AB2D3",
+    backgroundColor: "#fff",
+  },
+  tabText: {
+    fontSize: 16,
+    color: "#777",
+  },
+  activeTabText: {
+    color: "#7AB2D3",
+    fontWeight: "bold",
+  },
+  content: { flex: 1, paddingHorizontal: 20, paddingBottom: 70 },
   markAllContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-start",
     marginBottom: 16,
     gap: 10,
     marginTop: 20,
@@ -143,15 +191,8 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#7AB2D3",
   },
-  scrollContainer: {
-    paddingBottom: 16,
-  },
-  modalButton: {
-    alignItems: "center",
-    marginVertical: 20,
-  },
+  scrollContainer: { paddingBottom: 16 },
   bottomNavBar: {
-    display: "flex",
     justifyContent: "center",
     alignItems: "center",
   },
