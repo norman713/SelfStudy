@@ -21,6 +21,7 @@ import CreateTeamPopup from "@/components/popup/CreateTeam";
 import JoinPopup from "@/components/popup/JoinTeam";
 import teamApi from "@/api/teamApi";
 import memberApi from "@/api/memberApi";
+import axios from "axios";
 
 const { width, height } = Dimensions.get("window");
 interface Team {
@@ -56,8 +57,8 @@ export default function TeamScreen() {
 
         const response = await teamApi.getAll(userId, cursor, size);
 
-        const data: Team[] = Array.isArray(response.teams)
-          ? response.teams.map((item: any) => ({
+        const data: Team[] = Array.isArray(response.data.teams)
+          ? response.data.teams.map((item: any) => ({
               id: item.id,
               name: item.name,
               isAdmin: item.managedByUser,
@@ -91,8 +92,12 @@ export default function TeamScreen() {
     } catch (error) {
       console.error("Error joining team:", error);
 
-      const errorMessage =
-        error.response?.message || "There was an error joining the team.";
+      let errorMessage = "There was an error joining the team.";
+
+      if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.message || errorMessage;
+      }
+
       Alert.alert("Error", errorMessage);
     }
   };

@@ -5,6 +5,9 @@ interface TeamContextProps {
   role: string;
   setRole: (value: string) => void;
   getRole: () => string;
+  id: string;
+  setId: (value: string) => void;
+  getId: () => string;
 }
 
 // Định nghĩa kiểu dữ liệu cho props của TeamProvider, bao gồm cả children
@@ -18,12 +21,13 @@ const TeamContext = createContext<TeamContextProps | undefined>(undefined);
 // Provider cho phép các component con sử dụng context
 export const TeamProvider = ({ children }: TeamProviderProps) => {
   const [role, setRole] = useState<string>(""); // Khởi tạo state role
+  const [id, setId] = useState<string>("");     // Khởi tạo state id
 
-  // Hàm lấy giá trị role
   const getRole = () => role;
+  const getId = () => id;
 
   return (
-    <TeamContext.Provider value={{ role, setRole, getRole }}>
+    <TeamContext.Provider value={{ role, setRole, getRole, id, setId, getId }}>
       {children}
     </TeamContext.Provider>
   );

@@ -11,71 +11,316 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Alert,
+  Pressable,
 } from "react-native";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import Header from "@/components/Header";
+import * as ImagePicker from 'expo-image-picker';
+import { useTeamContext } from "@/context/TeamContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { jwtDecode } from "jwt-decode";
+import { connectChatSocket } from "@/util/chatsocket";
+import chatApi from "@/api/chatApi";
+import { err } from "react-native-svg";
+import teamApi from "@/api/teamApi";
+import { useUser } from "@/context/UserContext";
+import axiosInstance from "@/api/axiosConfig";
+
+interface TokenPayload {
+  sub: string;
+  role: string;
+  exp: number;
+}
 
 const CURRENT_USER_ID = "u1";
-const AVATAR_URL =
-  "https://m.media-amazon.com/images/S/pv-target-images/16627900db04b76fae3b64266ca161511422059cd24062fb5d900971003a0b70._SX1080_FMjpg_.jpg";
 
-// Thêm url avatar của team
-const teamAvatarUrl =
-  "https://m.media-amazon.com/images/S/pv-target-images/16627900db04b76fae3b64266ca161511422059cd24062fb5d900971003a0b70._SX1080_FMjpg_.jpg";
+export interface Message {
+  id: string | undefined
+  userId: string | undefined
+  username: string | undefined
+  avatarUrl: string | undefined
+  content: string
+  createdAt: string
+  imageUrl: string 
+  readBy: any[]
+  deleted: boolean
+}
 
-const teamInfo = {
-  name: "Team Cầu Lông",
-  members: 6,
-};
-
-const initialMessages = [
-  {
-    id: "m1",
-    user: { id: "u2", name: "Kha", avatar: { uri: AVATAR_URL } },
-    text: "hi cả nhà yêu của kem",
-    time: "13:50",
-  },
-  // ... các tin khác
-];
+export interface Team {
+  id: string
+  name: string
+  description: string
+  teamCode: string
+  createDate: string
+  creatorId: string
+  totalMembers: number
+  avatarUrl: string
+}
 
 export default function ChatScreen() {
-  const [messages, setMessages] = useState(initialMessages);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const flatListRef = useRef<FlatList<any>>(null);
+  const { setId, getId } = useTeamContext();
+  const [teamId, setTeamId] = useState<string | null>(null);
+  const { user } = useUser();
+  const [team, setTeam] = useState<any>();
+  const socketRef = useRef<WebSocket | null>(null);
+  const isAppending = useRef(false);
 
   useEffect(() => {
-    flatListRef.current?.scrollToEnd({ animated: true });
+    const id = "111e8400-e29b-41d4-a716-446655440001";
+    setId(id);          // context update
+    setTeamId(id);  
+  }, []);
+
+  useEffect(() => {
+    if (isAppending.current) {
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+      isAppending.current = false;
+    }
   }, [messages]);
 
-  const sendMessage = () => {
-    const text = input.trim();
-    if (!text) return;
-    const newMsg = {
-      id: Date.now().toString(),
-      user: { id: CURRENT_USER_ID, name: "Bạn", avatar: { uri: AVATAR_URL } },
-      text,
-      time: new Date().toLocaleTimeString().slice(0, 5),
+  useEffect(() => {
+    if (!teamId) return;
+
+    const fetchUserAndTeam = async () => {
+      try {
+        const response = await teamApi.getTeamInfo(getId());
+        setTeam(response);
+      } catch (error) {
+          console.error('Error fetching team:', error);
+      }
     };
-    setMessages((prev) => [...prev, newMsg]);
-    setInput("");
+
+    fetchUserAndTeam();
+  }, [teamId]);
+
+  useEffect(() => {
+    if (!teamId) return;
+
+    const fetchAllMessage = async () => {
+      try {
+        console.log(getId());
+        const response = await chatApi.getChatMessages({teamId: getId()});
+        setMessages(response.messages);
+      } catch (error) {
+          console.error('Error fetching all messages:', error);
+      }
+    };
+
+    fetchAllMessage();
+  }, [teamId]);
+
+  useEffect(() => {
+    if (!user?.id || !getId()) return; 
+
+    const url = `ws://103.211.201.112:8086/ws/chat?userId=${user.id}&teamId=${getId()}`;
+    console.log("Connecting to:", url);
+
+    const socket = connectChatSocket(url, (message) => {
+      try {
+      switch (message.type) {
+        case "new":
+          const newMsg: Message = {
+            ...message.data,
+            readBy: [],
+          };
+          setMessages((prev) => [newMsg, ...prev]);
+          isAppending.current = true;
+          break;
+
+        case "delete":
+          const oldMsg: any = {
+            ...message.data,
+          };
+          const deleteID = oldMsg.messageId;
+
+          setMessages((prev: Message[]) =>
+            prev.map((msg) =>
+              msg.id === deleteID ? { ...msg, deleted: true} : msg
+            )
+          );
+          break;
+
+        default:
+          console.log("Unhandled message type:", message.type);
+          break;
+      }
+    } catch (err) {
+      console.error("Failed to handle socket message:", err);
+    }
+  });
+
+    socketRef.current = socket;
+
+    return () => {
+      socket.close();
+    };
+
+  }, [user?.id, getId]);
+
+  const loadMoreMessages = async () => {
+    if (messages.length === 0) return;
+
+    const oldestMessage = messages[messages.length-1];
+    const cursor = oldestMessage.createdAt.trim();
+    const isoString = cursor.replace(" ", "T");
+    try {
+      const response = await chatApi.getChatMessages({
+        teamId: getId(),
+        cursor: isoString,
+        size: 10
+      });
+
+      if (response.messages.length > 0) {
+        setMessages((prev) => [...prev, ...response.messages]);
+      }
+    } catch (error : any) {
+      console.error("Error loading older messages:", error.response.data);
+    }
   };
 
+  const handleChooseOption = () => {
+    Alert.alert(
+      'Select Option',
+      'Choose an image source',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Take Photo',
+          onPress: openCamera,
+        },
+        {
+          text: 'Choose from Gallery',
+          onPress: openGallery,
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const handleDelete = (messageId: string) => {
+    Alert.alert(
+      'Delete Message',
+      'Are you sure you want to delete this message?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => deleteMessage(messageId) }
+      ]
+    );
+  };
+
+  const deleteMessage = async (id: string) => {
+    try{
+      const response = await chatApi.deleteChatMessage(id);
+    }catch(error){
+      console.error('Error delete message:', error);
+    }
+  };
+
+  const openCamera = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) return;
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      sendImage(uri);
+    }
+  };
+
+  const openGallery = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      sendImage(uri);
+    }
+  };
+
+  const sendMessage = async() => {
+    const text = input.trim();
+    if (!text) return;
+
+    try{
+      const response = await chatApi.sendChatMessage(text, teamId);      
+      setInput("");
+    }catch (error){
+      console.error('Error sending message:', error);
+    }
+  };
+
+  const sendImage = async (uri : string) => {
+    
+    try{
+      const formData = new FormData();
+
+      formData.append("file", {
+        uri,
+        type: "image/jpeg",
+        name: "chat-image.jpg",
+      } as any); 
+
+      const res = await chatApi.sendChatImage(formData, teamId);
+    } catch (error: any) {
+        console.error("❌ Error sending image:");
+        console.error("Message:", error.message);
+        console.error("Is Axios Error:", error.isAxiosError);
+        if (error.response) {
+          console.error("🔻 Server responded with error:", error.response.status);
+          console.error("Response data:", error.response.data);
+        } else if (error.request) {
+          console.error("🔻 No response received. Request details:", error.request);
+        } else {
+          console.error("🔻 Error setting up request:", error);
+        }
+    }
+  }
+
   const renderItem = ({ item }: any) => {
-    const isMe = item.user.id === CURRENT_USER_ID;
+    const isMe = item.userId == user?.id;
+    
     return (
       <View
         style={[styles.messageRow, isMe ? styles.rowRight : styles.rowLeft]}
       >
-        {!isMe && <Image source={item.user.avatar} style={styles.avatar} />}
-        <View
+        {!isMe && <Image source={{uri : item.avatarUrl}} style={styles.avatar} />}
+        <Pressable
+          onLongPress={isMe ? () => handleDelete(item.id) : () => {}}
           style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleOther]}
         >
-          {!isMe && <Text style={styles.name}>{item.user.name}</Text>}
-          <Text style={styles.text}>{item.text}</Text>
-          <Text style={styles.time}>{item.time}</Text>
-        </View>
-        {isMe && <Image source={item.user.avatar} style={styles.avatar} />}
+          {!isMe && <Text style={styles.name}>{item.username}</Text>}
+          {item.deleted ? (
+            <Text style={styles.deleteText}>This message has been deleted</Text>
+          ) : (
+            <>
+              <Text style={styles.text}>{item.content}</Text>
+              {item.imageUrl != "" && (
+                <Image
+                  style={styles.chatImage}
+                  source={{ uri: item.imageUrl }}
+                />
+              )}
+            </>
+          )}
+          <Text style={styles.time}>{item.createdAt}</Text>
+        </Pressable>
+        {isMe && <Image source={{uri : user?.avatarUrl}} style={styles.avatar} />}
       </View>
     );
   };
@@ -92,11 +337,11 @@ export default function ChatScreen() {
         end={{ x: 1, y: 0 }}
       >
         {/* Avatar team */}
-        <Image source={{ uri: teamAvatarUrl }} style={styles.teamAvatar} />
+        <Image source={{ uri: team?.avatarUrl }} style={styles.teamAvatar} />
         {/* Tên team và số thành viên */}
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>{teamInfo.name}</Text>
-          <Text style={styles.headerSub}>{teamInfo.members} members</Text>
+          <Text style={styles.headerTitle}>{team?.name}</Text>
+          <Text style={styles.headerSub}>{team?.totalMembers} members</Text>
         </View>
       </LinearGradient>
 
@@ -104,9 +349,12 @@ export default function ChatScreen() {
       <FlatList
         ref={flatListRef}
         data={messages}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id?.toString() ?? Math.random().toString()}
         renderItem={renderItem}
         contentContainerStyle={styles.chatList}
+        inverted={true}
+        onEndReachedThreshold={0.1}
+        onEndReached={loadMoreMessages}
       />
 
       {/* Input gửi tin */}
@@ -114,15 +362,19 @@ export default function ChatScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View style={styles.inputRow}>
+          <TouchableOpacity style={styles.attachBtn}>
+            <Ionicons onPress={handleChooseOption} name="image-outline" size={24} color="#007AFF" />
+          </TouchableOpacity>
           <TextInput
             style={styles.input}
+            autoFocus
             placeholder="Type a new message"
             placeholderTextColor="#999"
             value={input}
             onChangeText={setInput}
           />
           <TouchableOpacity onPress={sendMessage} style={styles.sendBtn}>
-            <Ionicons name="send" size={24} color="#007AFF" />
+            <Ionicons name="send-outline" size={24} color="#007AFF" />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -174,16 +426,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   bubbleOther: {
-    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
   },
   bubbleMe: {
-    backgroundColor: "#DCF8C6",
-    borderTopRightRadius: 0,
+    backgroundColor: "#8de1f0",
+    borderBottomRightRadius: 0,
   },
 
   name: { fontSize: 12, fontWeight: "600", marginBottom: 4, color: "#1E282D" },
   text: { fontSize: 14, color: "#1E282D" },
-  time: { fontSize: 10, color: "#888", alignSelf: "flex-end", marginTop: 6 },
+  deleteText: {fontSize: 14, color: "#535353", fontStyle: "italic"},
+  time: { fontSize: 10, color: "#535353", alignSelf: "flex-end", marginTop: 6 },
 
   inputRow: {
     flexDirection: "row",
@@ -198,7 +451,12 @@ const styles = StyleSheet.create({
     height: 40,
     paddingHorizontal: 12,
     borderRadius: 20,
-    backgroundColor: "#F0F0F0",
   },
   sendBtn: { marginLeft: 8 },
+  attachBtn: { marginRight: 8 },
+  chatImage: {
+    width: 200,
+    height: 200,
+    objectFit: "contain"
+  }
 });
