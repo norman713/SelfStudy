@@ -38,24 +38,25 @@ interface Invitation {
 const Noti: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState<"notification" | "invitation">("notification");
   const [isAllChecked, setIsAllChecked] = useState(false);
-  const [notificationCursor, setNotificationCursor] = useState<string>("");
-  const [notificationSize, setNotificationSize] = useState<number>(10);
-  const [invitationCursor, setInvitationCursor] = useState<string>("");
-  const [invitationSize, setInvitationSize] = useState<number>(10);
-  const [isLoading, setIsLoading] = useState<boolean>(false); 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
-
   const [checkedItems, setCheckedItems] = useState<boolean[]>(
       notifications.map(() => false)
   );
-
   const [markedIds, setMarkedIds] = useState<Set<string>>(new Set());
+  const [reloadTrigger, setReloadTrigger] = useState(0);
 
   const handleCheckAllToggle = () => {
     const newCheckedState = !isAllChecked;
     setIsAllChecked(newCheckedState);
     setCheckedItems(notifications.map(() => newCheckedState));
+    
+    if(newCheckedState) {
+      setMarkedIds(new Set(notifications.map(n => n.id)));
+    }
+    else {
+      setMarkedIds(new Set());
+    }
   };
 
   const handleItemToggle = (index: number) => {
@@ -82,9 +83,7 @@ const Noti: React.FC = () => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        setIsLoading(true);
-
-        const response = await notificationApi.get(notificationSize, notificationCursor);
+        const response = await notificationApi.get(10, '');
 
         const data: Notification[] = Array.isArray(response.notifications)
           ? response.notifications.map((item: any) => ({
@@ -98,22 +97,18 @@ const Noti: React.FC = () => {
             }))
           : [];
         setNotifications(data);
-      } catch (error) {
+       } catch (error) {
         console.error("Error fetching notifications", error);
-      } finally {
-        setIsLoading(false);
       }
     };
 
     fetchNotifications();
-  }, [notificationCursor, notificationSize]);
+  }, [reloadTrigger]);
 
   useEffect(() => {
     const fetchInvitations = async () => {
       try {
-        setIsLoading(true);
-
-        const response = await invitationApi.get(invitationSize, invitationCursor);
+        const response = await invitationApi.get(10, '');
 
         const data: Invitation[] = Array.isArray(response.invitations)
           ? response.invitations.map((item: any) => ({
@@ -128,13 +123,35 @@ const Noti: React.FC = () => {
         setInvitations(data);
       } catch (error) {
         console.error("Error fetching notifications", error);
-      } finally {
-        setIsLoading(false);
       }
     };
 
     fetchInvitations();
-  }, [invitationCursor, invitationSize]);
+  }, [reloadTrigger]);
+
+  const handleDelete = async () => {
+    if(isAllChecked) {
+      await notificationApi.deleteAll();
+    }
+    else {
+      await notificationApi.deleteSelected(markedIds);
+    }
+
+    setReloadTrigger((prev) => prev + 1);
+  }
+
+  const handleMark = async () => {
+    if(isAllChecked) {
+      await notificationApi.markAll();
+    }
+    else {
+      await notificationApi.markSelected(markedIds);
+    }
+
+    setReloadTrigger((prev) => prev + 1);
+  }
+
+  console.log(notifications);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -149,7 +166,7 @@ const Noti: React.FC = () => {
               style={styles.iconButton}
             >
               <Pressable
-                onPress={() => console.log("Refresh pressed")}
+                onPress={handleMark}
                 style={({ pressed }) => [
                   styles.iconContent,
                   pressed && styles.iconPressed,
@@ -165,7 +182,7 @@ const Noti: React.FC = () => {
               style={styles.iconButton}
             >
               <Pressable
-                onPress={() => console.log("Delete pressed")}
+                onPress={handleDelete}
                 style={({ pressed }) => [
                   styles.iconContent,
                   pressed && styles.iconPressed,
