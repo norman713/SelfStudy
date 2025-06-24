@@ -97,14 +97,11 @@ export default function TeamScreen() {
     }
   };
 
-  // xử lý tạo team
   const handleSaveNewTeam = async (name: string, description: string) => {
     try {
       const response = await teamApi.create(userId, name, description);
       console.log("Team created successfully:", response);
-
-      // Cập nhật danh sách đội sau khi tạo mới
-      const newTeam = response; // Giả sử API trả về đội vừa tạo
+      const newTeam = response;
       setFilteredTeams([newTeam, ...filteredTeams]);
     } catch (error) {
       console.error("Error creating team:", error);
