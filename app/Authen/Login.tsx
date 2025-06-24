@@ -74,7 +74,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const response = await userApi.login(loginRequest.email, loginRequest.password);
-      const { accessToken, refreshToken } = response.data;
+      const { accessToken, refreshToken } = response;
       await AsyncStorage.setItem("accessToken", accessToken);
       await AsyncStorage.setItem("refreshToken", refreshToken);
       setShowError(false);

@@ -4,7 +4,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import Select from "@/components/Select";
 import PlanItemNoti from "@/components/plan/PlanItemNoti";
-import Checkbox from "@/components/CheckBox";
+import Checkbox from "@/components/Checkbox";
 import { router } from "expo-router";
 
 // Mock data per team

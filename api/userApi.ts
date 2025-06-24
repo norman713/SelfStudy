@@ -1,5 +1,11 @@
 import axiosInstance from "./axiosConfig";
 
+interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  // Thêm các trường khác nếu có (ví dụ: userId, message, etc.)
+}
+
 const userApi = {
   getUserInfo(userId: string) {
     let url = "/users/" + userId
@@ -13,13 +19,13 @@ const userApi = {
     return axiosInstance.patch(url, userData);
   },
 
-  login(email: string, password: string) {
+  login(email: string, password: string): Promise<LoginResponse> {
     const url = "/api/auth/cred";
     const body = { email, password };
     return axiosInstance.post(url, body);
   },
   register(username: string, email: string, password: string) {
-    const url = "api/auth/register";
+    const url = "/api/auth/register";
     const body = { username, email, password };
     return axiosInstance.post(url, body);
   },
