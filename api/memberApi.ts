@@ -12,7 +12,7 @@ getUserInfo(userId: string, teamId: string){
 },
 getList(teamId: string, cursor: string, size: number){
 
-    let url="members/list?teamId="+teamId+"&size"+ size;
+    let url="members/all?teamId="+teamId+"&size"+ size;
        if(cursor.length===0){
             url +="&cursor="+ cursor;
         }

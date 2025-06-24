@@ -17,9 +17,11 @@ import useCustomFonts from "@/hooks/useCustomFonts";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import userApi from "@/api/userApi"; // Import the API call
+import { useUser } from "@/context/UserContext";
 
 export default function Profile() {
   const fontsLoaded = useCustomFonts();
+  const { user } = useUser();
   const [userData, setUserData] = useState({
     username: "",
     dateOfBirth: "",
@@ -91,7 +93,7 @@ export default function Profile() {
         <View style={styles.avatarContainer}>
           <Image
             source={{
-              uri: userData.avatarUrl || "https://via.placeholder.com/110", // Placeholder image if avatarUrl is empty
+              uri: user?.avatarUrl || "https://via.placeholder.com/110", // Placeholder image if avatarUrl is empty
             }}
             style={styles.avatar}
           />

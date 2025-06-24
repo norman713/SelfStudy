@@ -453,8 +453,7 @@ export default function TeamInfo() {
               size={24}
               color="black"
             />
-            <Text>Show members ({teamInfo?.totalMembers || 0})</Text>{" "}
-            {/* Dynamically display total members */}
+            <Text>Show members ({teamInfo?.totalMembers || 0})</Text>
           </TouchableOpacity>
 
           {/* Members List */}
