@@ -68,12 +68,20 @@ export default function ChatScreen() {
   const { user } = useUser();
   const [team, setTeam] = useState<any>();
   const socketRef = useRef<WebSocket | null>(null);
+  const isAppending = useRef(false);
 
   useEffect(() => {
     const id = "111e8400-e29b-41d4-a716-446655440001";
     setId(id);          // context update
     setTeamId(id);  
   }, []);
+
+  useEffect(() => {
+    if (isAppending.current) {
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+      isAppending.current = false;
+    }
+  }, [messages]);
 
   useEffect(() => {
     if (!teamId) return;
@@ -97,7 +105,7 @@ export default function ChatScreen() {
       try {
         console.log(getId());
         const response = await chatApi.getChatMessages({teamId: getId()});
-        setMessages(response.messages.reverse());
+        setMessages(response.messages);
       } catch (error) {
           console.error('Error fetching all messages:', error);
       }
@@ -120,7 +128,8 @@ export default function ChatScreen() {
             ...message.data,
             readBy: [],
           };
-          setMessages((prev) => [...prev, newMsg]);
+          setMessages((prev) => [newMsg, ...prev]);
+          isAppending.current = true;
           break;
 
         case "delete":
@@ -153,10 +162,26 @@ export default function ChatScreen() {
 
   }, [user?.id, getId]);
 
+  const loadMoreMessages = async () => {
+    if (messages.length === 0) return;
 
-  useEffect(() => {
-    flatListRef.current?.scrollToEnd({ animated: true });
-  }, [messages]);
+    const oldestMessage = messages[messages.length-1];
+    const cursor = oldestMessage.createdAt.trim();
+    const isoString = cursor.replace(" ", "T");
+    try {
+      const response = await chatApi.getChatMessages({
+        teamId: getId(),
+        cursor: isoString,
+        size: 10
+      });
+
+      if (response.messages.length > 0) {
+        setMessages((prev) => [...prev, ...response.messages]);
+      }
+    } catch (error : any) {
+      console.error("Error loading older messages:", error.response.data);
+    }
+  };
 
   const handleChooseOption = () => {
     Alert.alert(
@@ -327,6 +352,9 @@ export default function ChatScreen() {
         keyExtractor={(item) => item.id?.toString() ?? Math.random().toString()}
         renderItem={renderItem}
         contentContainerStyle={styles.chatList}
+        inverted={true}
+        onEndReachedThreshold={0.1}
+        onEndReached={loadMoreMessages}
       />
 
       {/* Input gửi tin */}
