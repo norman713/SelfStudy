@@ -36,6 +36,9 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "permissions": [
+      "READ_EXTERNAL_STORAGE"
+    ]
   }
 }

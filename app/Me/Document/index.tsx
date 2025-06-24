@@ -15,6 +15,7 @@ import * as DocumentPicker from "expo-document-picker";
 import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
 import Header from "@/components/Header";
 import BottomNavBar from "@/components/navigation/ButtonNavBar";
+import folderApi from "@/api/folderApi";
 
 interface DocInfo {
   name: string;
@@ -35,18 +36,22 @@ export default function Page() {
   const [newFolderName, setNewFolderName] = useState("");
 
   // Tạo folder mới
-  const handleAddFolder = () => {
+  const handleAddFolder = async () => {
     if (!newFolderName.trim()) {
       Alert.alert("Lỗi", "Tên folder không được để trống.");
       return;
     }
-    const id = Date.now().toString();
-    setFolders((prev) => [
-      ...prev,
-      { id, name: newFolderName.trim(), docs: [] },
-    ]);
-    setNewFolderName("");
-    setModalVisible(false);
+    try {
+      const folder = await folderApi.create(newFolderName.trim());
+      setFolders((prev) => [
+        ...prev,
+        { id: folder.id, name: folder.name, docs: [] },
+      ]);
+      setNewFolderName("");
+      setModalVisible(false);
+    } catch (err: any) {
+      Alert.alert("Lỗi", "Không thể tạo folder: " + err.message);
+    }
   };
 
   const confirmDeleteFolder = (fid: string) => {
@@ -77,10 +82,25 @@ export default function Page() {
     }
     try {
       const res: any = await DocumentPicker.getDocumentAsync({
-        type: "*/*",
-        copyToCacheDirectory: true,
+        type: [
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+          "application/msword" // .doc
+        ],    
+            copyToCacheDirectory: true,
       });
-      if (res.type === "success") {
+
+      if (!res.canceled && res.assets && res.assets.length > 0) {
+        // Chuẩn bị file cho FormData
+        console.log(res);
+        const file = res.assets[0];
+        const fileToUpload: any = {
+          uri: file.uri,
+          name: file.name,
+          type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        };
+        // Gọi API upload
+        await folderApi.uploadFile(expandedFolder, fileToUpload, file.name);
+        // Thêm vào UI (có thể reload lại folder từ server nếu muốn)
         setFolders((prev) =>
           prev.map((f) =>
             f.id === expandedFolder
@@ -88,16 +108,17 @@ export default function Page() {
                   ...f,
                   docs: [
                     ...f.docs,
-                    { name: res.name, uri: res.uri, size: res.size },
+                    { name: file.name, uri: file.uri, size: file.size },
                   ],
                 }
               : f
           )
         );
+        Alert.alert("Thành công", "Tải file lên thành công!");
       }
     } catch (err: any) {
-      console.error("Error picking document:", err);
-      Alert.alert("Lỗi", "Không thể chọn file: " + err.message);
+      console.error("Error picking document or uploading:", err);
+      Alert.alert("Lỗi", "Không thể upload file: " + err.message);
     }
   };
 
@@ -148,7 +169,7 @@ export default function Page() {
         keyExtractor={(f) => f.id}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>Press “Add Folder” to start.</Text>
+          <Text style={styles.emptyText}>Press "Add Folder" to start.</Text>
         }
         renderItem={({ item }) => {
           const isOpen = item.id === expandedFolder;
