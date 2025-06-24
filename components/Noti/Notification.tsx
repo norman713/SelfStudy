@@ -1,8 +1,9 @@
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { StyleSheet, View, Text, Image } from "react-native";
+import { StyleSheet, View, Text, Image, Pressable } from "react-native";
 import dayjs from 'dayjs';
 import Checkbox from "../CheckBox";
 import { useState } from "react";
+import { router, useRouter } from "expo-router";
 
 interface NotificationProps {
     id: string;
@@ -27,10 +28,31 @@ export default function Notification({
     isChecked = false,
     onToggle
 }: NotificationProps) {
+    const teamId = '';
+    const router = useRouter();
     const formattedDate = dayjs(createdAt, 'DD-MM-YY HH:mm:ss').format('HH:mm:ss DD/MM/YY');
 
+    const handlePress = () => {
+      var url = '';
+
+      switch(subject) {
+        case "TEAM":
+          url = "/team/" + subjectId;
+          break;
+        case "PLAN":
+          url = "planDetail/"
+          break;
+      }
+
+      //Call Api to get plan type
+
+      //router.push(`/Me/PlanDetail?planId=${id}`);
+      //Routing
+
+    }
+
     return (
-    <View style={styles.container}>
+    <Pressable onPress={handlePress} style={styles.container}>
       <View style={styles.statusRow}>
         <View style={styles.statusContainer}>
           {read ? (
@@ -70,7 +92,7 @@ export default function Notification({
         </View>
       </View>
 
-    </View>
+    </Pressable>
     );
 }
 
@@ -114,7 +136,7 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     gap: 10,
   },
   iconWrapper: {

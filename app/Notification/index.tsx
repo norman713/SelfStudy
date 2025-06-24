@@ -1,9 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   ScrollView,
   Text,
-  TouchableOpacity,
   View,
   Pressable,
 } from "react-native";
@@ -13,21 +12,39 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import Checkbox from "@/components/CheckBox";
 import Notification from "@/components/Noti/Notification";
+import Invite from "@/components/Noti/Invite";
+import notificationApi from "@/api/notificationApi";
+import invitationApi from "@/api/invitationApi";
+
+interface Notification {
+  id: string;
+  title: string;
+  createdAt: string;
+  content: string;
+  subject: string;
+  subjectId: string;
+  read: boolean;
+}
+
+interface Invitation {
+  id: string;
+  inviterName: string;
+  inviterAvatarUrl: string;
+  teamId: string;
+  teamName: string;
+  invitedAt: string;
+}
 
 const Noti: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState<"notification" | "invitation">("notification");
   const [isAllChecked, setIsAllChecked] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([
-    {
-      id: '11111-11111',
-      title : 'Team updated',
-      createdAt: '2025-06-24 12:00:00',
-      content: 'User01 has just update team general information.',
-      subject: 'TEAM',
-      subjectId: '2222-2222',
-      read: false,
-    },
-  ]);
+  const [notificationCursor, setNotificationCursor] = useState<string>("");
+  const [notificationSize, setNotificationSize] = useState<number>(10);
+  const [invitationCursor, setInvitationCursor] = useState<string>("");
+  const [invitationSize, setInvitationSize] = useState<number>(10);
+  const [isLoading, setIsLoading] = useState<boolean>(false); 
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
 
   const [checkedItems, setCheckedItems] = useState<boolean[]>(
       notifications.map(() => false)
@@ -57,20 +74,67 @@ const Noti: React.FC = () => {
     
     setIsAllChecked(newCheckedItems.every((item) => item));
   };
- 
-  console.log(markedIds);
-
-  const handleAccept = (id: number) => {
-    console.log(`Accepted invitation for notification ID: ${id}`);
-  };
-
-  const handleDecline = (id: number) => {
-    console.log(`Declined invitation for notification ID: ${id}`);
-  };
 
   const handleTabChange = (tab : "notification" | "invitation") => {
       setSelectedTab(tab);
   };
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        setIsLoading(true);
+
+        const response = await notificationApi.get(notificationSize, notificationCursor);
+
+        const data: Notification[] = Array.isArray(response.notifications)
+          ? response.notifications.map((item: any) => ({
+              id: item.id,
+              title: item.title,
+              createdAt: item.createdAt,
+              content: item.content,
+              subject: item.subject,
+              subjectId: item.subjectId,
+              read: item.read,
+            }))
+          : [];
+        setNotifications(data);
+      } catch (error) {
+        console.error("Error fetching notifications", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchNotifications();
+  }, [notificationCursor, notificationSize]);
+
+  useEffect(() => {
+    const fetchInvitations = async () => {
+      try {
+        setIsLoading(true);
+
+        const response = await invitationApi.get(invitationSize, invitationCursor);
+
+        const data: Invitation[] = Array.isArray(response.invitations)
+          ? response.invitations.map((item: any) => ({
+              id: item.id,
+              inviterName: item.inviterName,
+              inviterAvatarUrl: item.inviterAvatarUrl,
+              teamId: item.teamId,
+              teamName: item.teamName,
+              invitedAt: item.invitedAt
+            }))
+          : [];
+        setInvitations(data);
+      } catch (error) {
+        console.error("Error fetching notifications", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInvitations();
+  }, [invitationCursor, invitationSize]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -171,6 +235,18 @@ const Noti: React.FC = () => {
             ) :
             (
               <>
+                {
+                  invitations.map((inv) => (
+                    <Invite
+                      id= {inv.id}
+                      inviterName={inv.inviterName}
+                      inviterAvatarUrl={inv.inviterAvatarUrl}
+                      invitedAt={inv.invitedAt}
+                      teamName={inv.teamName}
+                      teamId={inv.teamId}
+                    />
+                  ))
+                }
               </>
             )  
           }
