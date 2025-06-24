@@ -16,49 +16,98 @@ import Checkbox from "@/components/CheckBox";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CustomButton from "@/components/CustomButton";
 import { formatDateToISOString } from "@/util/format";
-// Using mock data instead of real APIs
-const mockPlanInfo = {
-  name: "Mock Plan",
-  description: "This is a mock plan description.",
-  startDate: formatDateToISOString(new Date()),
-  endDate: formatDateToISOString(new Date(Date.now() + 86400000)),
-  notifyBefore: "00:30:00",
-  status: "INCOMPLETE",
-  completeDate: null,
-};
+import userApi from "@/api/userApi";
+
+interface Reminder {
+  id: string;
+  remindAt: string;
+}
+
+interface Task {
+  id: string;
+  name: string;
+  status: "INCOMPLETE" | "COMPLETED";
+  assigneeId?: string;
+  assigneeAvatarUrl?: string;
+}
+
+interface Plan {
+  id: string;
+  isTeamPlan: boolean;
+  completeAt: string;
+  name: string;
+  description: string;
+  startAt: string;
+  endAt: string;
+  reminders: Reminder[];
+  tasks: Task[];
+}
+
+/**
+ * Computes the time difference between endAt and notifyDate in "HH:mm:ss" format.
+ * @param endAt ISO string or Date object representing the end time.
+ * @param notifyDate ISO string or Date object representing the notify time.
+ * @returns {string} The difference as "HH:mm:ss".
+ */
+function computeNotifyBefore(endAt: Date, notifyDate: Date): string {
+  const end = endAt;
+  const notify = notifyDate;
+
+  console.log("End time:", end);
+  console.log("Notify time:", notify);
+
+  let diff = end.getTime() - notify.getTime();
+
+  if (diff < 0) diff = 0;
+
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+  const output = [
+    hours.toString().padStart(2, "0"),
+    minutes.toString().padStart(2, "0"),
+    seconds.toString().padStart(2, "0"),
+  ].join(":")
+  console.log("Time difference:", output)
+  return output
+}
 
 export default function PlanScreen() {
-  // Mock data
-  const mockTasks = [
-    { id: "1", name: "Mock Task 1", status: "INCOMPLETE" },
-    { id: "2", name: "Mock Task 2", status: "COMPLETED" },
-  ];
-
-  // State
-  const [tasks, setTasks] = useState(mockTasks);
-  const [planInfo, setPlanInfo] = useState(mockPlanInfo);
+  const [tasks, setTasks] = useState<Task[]>();
+  const [planInfo, setPlanInfo] = useState<Plan>();
   const [newTask, setNewTask] = useState("");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTaskName, setEditingTaskName] = useState("");
   const searchParams = useLocalSearchParams();
-  const id = searchParams.id as string;
+  const id = searchParams.planId as string;
   const [showError, setShowError] = useState(false);
   const [message, setMessage] = useState({ title: "", description: "" });
 
   // Handlers
   const handleAddTask = () => {
     if (newTask.trim() !== "") {
-      setTasks((prev) => [
-        ...prev,
-        { id: Date.now().toString(), name: newTask, status: "INCOMPLETE" },
-      ]);
-      setNewTask("");
+      userApi.addTasks(planInfo!.id, [newTask]).finally(() => {
+        console.log("New task added:", newTask);
+        router.replace({
+          pathname: "/Me/PlanDetail",
+          params: { planId: id, reloadId: Date.now().toString() }
+        });
+      })
     }
   };
+  useEffect(() => {
+    userApi.getPlanByID(id).then((data) => {
+      const plan = data as unknown as Plan;
+      setPlanInfo(plan);
+      console.log("Plan data:", plan);
+      setTasks(plan.tasks || []);
+    });
+  }, [id]);
 
   const toggleTaskCompletion = (taskId: string, isChecked: boolean) => {
     setTasks((prev) =>
-      prev.map((t) =>
+      prev?.map((t) =>
         t.id === taskId
           ? { ...t, status: isChecked ? "COMPLETED" : "INCOMPLETE" }
           : t
@@ -67,7 +116,10 @@ export default function PlanScreen() {
   };
 
   const handleDeleteTask = (taskId: string) => {
-    setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    userApi.deleteTasks(id, [taskId]).then(() => {
+
+      setTasks((prev) => prev?.filter((t) => t.id !== taskId));
+    })
   };
 
   const startEditingTask = (taskId: string, name: string) => {
@@ -77,101 +129,115 @@ export default function PlanScreen() {
 
   const saveEditedTask = (taskId: string) => {
     setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, name: editingTaskName } : t))
+      prev?.map((t) => (t.id === taskId ? { ...t, name: editingTaskName } : t))
     );
     setEditingTaskId(null);
     setEditingTaskName("");
   };
 
   const handleChange = (field: string, value: string) => {
-    setPlanInfo((prev) => ({ ...prev, [field]: value }));
+    setPlanInfo((prev) => prev ? { ...prev, [field]: value } : prev);
   };
 
   const handleSave = () => {
     // Basic validation
-    if (!planInfo.name) {
+    if (!planInfo?.name) {
       setShowError(true);
       setMessage({ title: "Error", description: "Name is required." });
       return;
     }
 
-    // Mock save: log to console
-    console.log("Saved plan:", planInfo);
-    console.log("Tasks:", tasks);
-    router.push("/Me/Plan");
+    userApi.updatePlan(id, {
+      name: planInfo.name,
+      description: planInfo.description,
+      startAt: new Date(planInfo.startAt).toISOString(),
+      endAt: new Date(planInfo.endAt).toISOString(),
+    }).finally(() => {
+      // Mock save: log to console
+      console.log("Saved plan:", planInfo);
+      console.log("Tasks:", tasks);
+
+      router.push({
+        pathname: "/Me/Plan",
+        params: { reloadId: Date.now().toString() },
+      });
+    })
   };
+
 
   return (
     <SafeAreaView style={styles.safeview}>
       <BackButton />
       <ScrollView style={styles.container}>
-        <PlanInfo
+        {planInfo && (<PlanInfo
           name={planInfo.name}
           description={planInfo.description}
-          startDate={planInfo.startDate}
-          endDate={planInfo.endDate}
-          notifyBefore={planInfo.notifyBefore}
-          status={planInfo.status}
-          completeDate={planInfo.completeDate}
+          startDate={planInfo.startAt}
+          endDate={planInfo.endAt}
+          notifyBefore={planInfo.reminders[0]?.remindAt ? computeNotifyBefore(new Date(planInfo.endAt), new Date(planInfo.reminders[0]?.remindAt)) : "00:00:00"}
+          status={planInfo.completeAt ? "COMPLETED" : "IN_PROGRESS"}
+          completeDate={planInfo.completeAt}
           handleChangeValue={handleChange}
-        />
+        />)}
         <View style={styles.divideLine} />
-      </ScrollView>
-      <View style={styles.tasksSectionWrapper}>
-        <Text style={styles.sectionTitle}>Tasks</Text>
-        {tasks.map((item) => (
-          <View key={item.id} style={styles.taskContainer}>
-            <Checkbox
-              isChecked={item.status === "COMPLETED"}
-              onToggle={(checked) => toggleTaskCompletion(item.id, checked)}
-            />
+        <View style={styles.tasksSectionWrapper}>
+          <Text style={styles.sectionTitle}>Tasks</Text>
+          {tasks && tasks.map((item) => (
+            <View key={item.id} style={styles.taskContainer}>
+              <Checkbox
+                // isChecked={item.status === "COMPLETED"}
+                isChecked={false}
+                onToggle={(checked) => toggleTaskCompletion(item.id, checked)}
+              />
 
-            <View style={styles.taskContent}>
-              {editingTaskId === item.id ? (
-                <TextInput
-                  style={styles.taskInput}
-                  value={editingTaskName}
-                  onChangeText={setEditingTaskName}
-                  onSubmitEditing={() => saveEditedTask(item.id)}
-                />
-              ) : (
-                <TouchableOpacity
-                  onPress={() => startEditingTask(item.id, item.name)}
-                >
-                  <Text
-                    style={[
-                      styles.taskText,
-                      item.status === "COMPLETED" && styles.taskTextCompleted,
-                    ]}
+              <View style={styles.taskContent}>
+                {editingTaskId === item.id ? (
+                  <TextInput
+                    style={styles.taskInput}
+                    value={editingTaskName}
+                    onChangeText={setEditingTaskName}
+                    onSubmitEditing={() => saveEditedTask(item.id)}
+                  />
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => startEditingTask(item.id, item.name)}
                   >
-                    {item.name}
-                  </Text>
-                </TouchableOpacity>
-              )}
+                    <Text
+                      style={[
+                        styles.taskText,
+                        // item.status === "COMPLETED" && styles.taskTextCompleted,
+                      ]}
+                    >
+                      {item.name}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <TouchableOpacity onPress={() => handleDeleteTask(item.id)}>
+                <MaterialCommunityIcons name="delete" size={24} color="#C0C0C0" />
+              </TouchableOpacity>
             </View>
+          ))}
 
-            <TouchableOpacity onPress={() => handleDeleteTask(item.id)}>
-              <MaterialCommunityIcons name="delete" size={24} color="#C0C0C0" />
+          <View style={styles.addTaskContainer}>
+            <TouchableOpacity onPress={handleAddTask}>
+              <MaterialCommunityIcons
+                name="plus-circle-outline"
+                size={30}
+                color="#7AB2D3"
+              />
             </TouchableOpacity>
-          </View>
-        ))}
-
-        <View style={styles.addTaskContainer}>
-          <TouchableOpacity onPress={handleAddTask}>
-            <MaterialCommunityIcons
-              name="plus-circle-outline"
-              size={30}
-              color="#7AB2D3"
+            <TextInput
+              style={styles.addTaskInput}
+              placeholder="Add new task"
+              value={newTask}
+              onChangeText={setNewTask}
             />
-          </TouchableOpacity>
-          <TextInput
-            style={styles.addTaskInput}
-            placeholder="Add new task"
-            value={newTask}
-            onChangeText={setNewTask}
-          />
+          </View>
         </View>
-      </View>
+
+      </ScrollView>
 
       <View style={styles.buttonContainer}>
         <CustomButton title="Save" onPress={handleSave} />

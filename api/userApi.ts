@@ -36,12 +36,14 @@ const userApi = {
     const body = { email, password };
     return axiosInstance.post(url, body);
   },
+
   validate(username: string, email: string, password: string, dateOfBirth: string, gender: string) {
     const url = "/auth/validate";
     const body = { username, email, password, dateOfBirth, gender };
     console.log(body);
     return axiosInstance.post(url, body);
   },
+  
   register(username: string, email: string, password: string, dateOfBirth: string, gender: string, code: string) {
     const url = "/auth/register";
     const body = { username, email, password, dateOfBirth, gender, verificationCode: code };
@@ -53,5 +55,60 @@ const userApi = {
     return axiosInstance.get(url);
   },
 
+  getPersonalPlansInMonths(month: number, year: number) {
+    return axiosInstance.get(`/plans/month`, {
+      params: { month, year }
+    });
+  },
+  getPersonalPlans(date: string) {
+    return axiosInstance.get(`/plans/date?date=${date}`);
+  },
+
+  getPlansById(planId: string) {
+    return axiosInstance.get(`/plans/${planId}`);
+  },
+
+  addPlan(planData: {
+    name: string,
+    description: string,
+    startAt: string,
+    endAt: string,
+    remindTimes: string[],
+    tasks: string[]
+  }) {
+    return axiosInstance.post("/plans", planData);
+  },
+
+  updatePlan(planId: string, planData: {
+    name: string,
+    description: string,
+    startAt: string,
+    endAt: string,
+  }) {
+    return axiosInstance.patch(`/plans/${planId}`, planData);
+  },
+
+  updateTask(planId: string, planData: {
+    name: string,
+    description: string,
+    startAt: string,
+    endAt: string,
+    remindTimes: string[],
+  }) {
+    return axiosInstance.patch(`/tasks/personal`, planData);
+  },
+  getPlanByID(planId: string) {
+    return axiosInstance.get(`/plans/${planId}`);
+  },
+  deleteTasks(planId: string, taskIds: string[]) {
+    return axiosInstance.delete(`/tasks`, {
+      data: { planId, taskIds }
+    });
+  },
+  addTasks(planId: string, tasks: string[]) {
+    return axiosInstance.post(`/tasks/personal`, {
+      planId, tasks
+    });
+  }
 }
 export default userApi;

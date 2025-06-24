@@ -4,99 +4,59 @@ import useCustomFonts from "@/hooks/useCustomFonts";
 import Header from "@/components/Header";
 import React, { useEffect, useState } from "react";
 import BottomNavBar from "@/components/navigation/ButtonNavBar";
-import { router, useRouter } from "expo-router";
+import { router, useLocalSearchParams, useRouter } from "expo-router";
 import { Colors } from "@/constants/Colors";
-import { Calendar } from "react-native-calendars";
+import { Calendar, DateData } from "react-native-calendars";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import PlanItem from "@/components/plan/PlanItem";
+import userApi from "@/api/userApi";
 
 interface Plan {
   id: string;
   name: string;
   description: string;
-  startDate: string;
-  endDate: string;
+  startAt: string;
+  endAt: string;
   notifyBefore: string;
   status: string;
   progress: number;
   completeDate: string | null;
 }
-const mockPlans: Plan[] = [
-  {
-    id: "1",
-    name: "Design mobile UI",
-    description: "Create UI wireframes for new app",
-    startDate: "2025-05-13",
-    endDate: "2025-06-30",
-    notifyBefore: "1",
-    status: "In Progress",
-    progress: 0.4,
-    completeDate: null,
-  },
-  {
-    id: "2",
-    name: "Prepare pitch deck",
-    description: "Slides for investor meeting",
-    startDate: "2025-01-30",
-    endDate: "2025-06-20",
-    notifyBefore: "2",
-    status: "Not Started",
-    progress: 0.0,
-    completeDate: null,
-  },
-  {
-    id: "3",
-    name: "Deploy new API",
-    description: "Push backend to production",
-    startDate: "2025-06-13",
-    endDate: "2025-06-21",
-    notifyBefore: "1",
-    status: "Done",
-    progress: 1,
-    completeDate: "2025-04-30",
-  },
-];
 
 export default function Plan() {
   const { fontsLoaded } = useCustomFonts();
   const router = useRouter();
 
+  const searchParams = useLocalSearchParams();
   if (!fontsLoaded) return null;
 
-  const [markedDatesArray, setMarkedDatesArray] = useState<string[]>([
-    "2025-04-30",
-    "2025-05-01",
-    "2025-05-02",
-  ]);
+  const [markedDatesArray, setMarkedDatesArray] = useState<string[]>([]);
 
-  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0]);
   const [selectDatePlans, setSelectDatePlans] = useState<Plan[]>([]);
   const [todayPlanNum, setTodayPlanNum] = useState(0);
 
-  useEffect(() => {
-    const today = new Date().toISOString().split("T")[0]; // Ngày hiện tại
-    const todayPlans = mockPlans.filter(
-      (plan) => plan.startDate <= today && plan.endDate >= today
-    );
-    setTodayPlanNum(todayPlans.length);
-    setSelectDatePlans(todayPlans);
-  }, []);
+  const [currentSelectMonth, setCurrentSelectMonth] = useState<number>(0);
+  const [currentSelectYear, setCurrentSelectYear] = useState<number>(0);
 
   useEffect(() => {
     if (!selectedDate) return;
-
-    // Lọc kế hoạch dựa trên selectedDate nằm trong phạm vi startDate đến endDate
-    const filteredPlans = mockPlans.filter(
-      (plan) => plan.startDate <= selectedDate && plan.endDate >= selectedDate
-    );
-    setSelectDatePlans(filteredPlans);
-  }, [selectedDate]);
+    userApi.getPersonalPlans(selectedDate).then((data) => {
+      const filteredPlans = data as unknown as Plan[];
+      setSelectDatePlans(filteredPlans);
+      console.log("Preload:", searchParams.reloadId, "Selected Date:", selectedDate);
+      setTodayPlanNum(filteredPlans.length);
+    });
+  }, [selectedDate, searchParams.reloadId]);
 
   // markedDatesArray
   useEffect(() => {
-    const deadlines = mockPlans.map((plan) => plan.endDate);
-    setMarkedDatesArray(deadlines);
-  }, [mockPlans]);
+    userApi.getPersonalPlansInMonths(currentSelectMonth, currentSelectYear).then(data => {
+
+      const dates = data as unknown as string[];
+      setMarkedDatesArray(dates);
+    })
+  }, [currentSelectMonth, currentSelectYear]);
 
   const getMarkedDates = () => {
     const markedDates: Record<string, any> = {};
@@ -136,6 +96,14 @@ export default function Plan() {
         <View style={styles.calendarContainer}>
           <Calendar
             markedDates={getMarkedDates()}
+            initialDate={new Date().toISOString().split("T")[0]}
+            onMonthChange={(date: DateData) => {
+              setCurrentSelectMonth(date.month);
+              setCurrentSelectYear(date.year);
+            }}
+            onDayPress={(date: DateData) => {
+              setSelectedDate(date.dateString);
+            }}
             theme={{
               arrowColor: Colors.primary,
               dayTextColor: "#000000",
@@ -152,7 +120,7 @@ export default function Plan() {
               <PlanItem
                 planName={item.name}
                 progress={Number(item.progress) * 100}
-                deadline={item.endDate}
+                deadline={item.endAt}
               />
             </Pressable>
           ))}

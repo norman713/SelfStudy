@@ -17,7 +17,10 @@ interface AddPlanProps {
 }
 
 export default function AddPlan({ setPlanInfo }: AddPlanProps) {
-  const [startDate, setStartDate] = useState(new Date());
+  const initStartDate = new Date();
+  initStartDate.setSeconds(0);
+  initStartDate.setHours(0);
+  const [startDate, setStartDate] = useState(initStartDate);
   const [endDate, setEndDate] = useState(new Date());
   const [remindBefore, setRemindBefore] = useState({
     hours: 0,
