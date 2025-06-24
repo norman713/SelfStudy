@@ -86,6 +86,16 @@ const userApi = {
   },
   getPlanByID(planId: string) {
     return axiosInstance.get(`/plans/${planId}`);
+  },
+  deleteTasks(planId: string, taskIds: string[]) {
+    return axiosInstance.delete(`/tasks`, {
+      data: { planId, taskIds }
+    });
+  },
+  addTasks(planId: string, tasks: string[]) {
+    return axiosInstance.post(`/tasks/personal`, {
+      planId, tasks
+    });
   }
 }
 export default userApi;

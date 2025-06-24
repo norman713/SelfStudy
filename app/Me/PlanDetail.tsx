@@ -87,16 +87,13 @@ export default function PlanScreen() {
   // Handlers
   const handleAddTask = () => {
     if (newTask.trim() !== "") {
-      setTasks((prev) => {
-        if (prev == undefined) {
-          return []
-        }
-        return [
-          ...prev,
-          { id: Date.now().toString(), name: newTask, status: "INCOMPLETE" },
-        ]
-      });
-      setNewTask("");
+      userApi.addTasks(planInfo!.id, [newTask]).finally(() => {
+        console.log("New task added:", newTask);
+        router.replace({
+          pathname: "/Me/PlanDetail",
+          params: { planId: id, reloadId: Date.now().toString() }
+        });
+      })
     }
   };
   useEffect(() => {
@@ -119,7 +116,12 @@ export default function PlanScreen() {
   };
 
   const handleDeleteTask = (taskId: string) => {
-    setTasks((prev) => prev?.filter((t) => t.id !== taskId));
+    userApi.deleteTasks(id, [taskId]).then(() => {
+      router.replace({
+        pathname: "/Me/PlanDetail",
+        params: { planId: id, reloadId: Date.now().toString() }
+      });
+    })
   };
 
   const startEditingTask = (taskId: string, name: string) => {
