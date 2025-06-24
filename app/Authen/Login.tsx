@@ -32,6 +32,28 @@ export default function LoginScreen() {
   });
   const [loading, setLoading] = useState(false);
 
+  // const handleLogin = async () => {
+  //   if (loginRequest.email == "" || loginRequest.password == "") {
+  //     setShowError(true);
+  //     setMessage({
+  //       title: "Error",
+  //       description: "The email or password is empty.",
+  //     });
+
+  //     return;
+  //   }
+  //   console.log(loginRequest.password);
+
+  //   if (!isValidEmail(loginRequest.email)) {
+  //     setShowError(true);
+  //     setMessage({
+  //       title: "Error",
+  //       description: "Invalid email format.",
+  //     });
+  //     return;
+  //   }
+  // };
+
   const handleLogin = async () => {
     if (loginRequest.email == "" || loginRequest.password == "") {
       setShowError(true);
@@ -51,25 +73,16 @@ export default function LoginScreen() {
     }
     setLoading(true);
     try {
-      // 1. Login lấy token + userId
-      const res = await userApi.login(
+      const response = await userApi.login(
         loginRequest.email,
         loginRequest.password
       );
-      // axios trả về AxiosResponse<LoginResponse>, data mới chứa payload
-      const { accessToken, refreshToken, userId } = res.data;
+      const { accessToken, refreshToken } = response;
       await AsyncStorage.setItem("accessToken", accessToken);
       await AsyncStorage.setItem("refreshToken", refreshToken);
-      await AsyncStorage.setItem("userId", userId);
-
-      // 2. Fetch profile ngay sau khi có userId
-      const profileRes = await userApi.getUserInfo(userId);
-      const { username, avatar } = profileRes.data;
-      await AsyncStorage.setItem("username", username);
-      await AsyncStorage.setItem("avatar", avatar);
-
       setShowError(false);
-      router.replace("/Team/Plan");
+      setMessage({ title: "", description: "" });
+      router.replace("/Team/Plan"); // Chuyển hướng sau khi đăng nhập thành công
     } catch (err) {
       setShowError(true);
       setMessage({
