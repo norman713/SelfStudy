@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 
 // Import a default icon
 import defaultIcon from "../../assets/images/plan/invitation.png";
+import invitationApi from "@/api/invitationApi";
 
 interface InviteProps {
   id: string;
@@ -13,6 +14,7 @@ interface InviteProps {
   teamId: string;
   teamName: string;
   invitedAt: string;
+  onReply: (id: string) => void
 }
 
 const Invite: React.FC<InviteProps> = ({
@@ -21,17 +23,19 @@ const Invite: React.FC<InviteProps> = ({
   inviterAvatarUrl,
   teamId,
   teamName,
-  invitedAt
+  invitedAt,
 }) => {
   const formattedDate = dayjs(invitedAt, 'DD-MM-YY HH:mm:ss').format('HH:mm:ss DD/MM/YY');
 
   const [visible, setVisible] = useState(true);
 
-  const handleDecline = () => {
+  const handleDecline = async () => {
+    await invitationApi.reply(id, false);
     setVisible(false);
   };
 
-  const handleAccept = () => {
+  const handleAccept = async () => {
+    await invitationApi.reply(id, true);
     setVisible(false);
   };
 
