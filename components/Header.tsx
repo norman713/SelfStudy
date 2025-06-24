@@ -17,7 +17,13 @@ import { usePathname } from "expo-router";
 import { useNavigationContext } from "@/context/NavigationContext";
 import { useUser } from "../context/UserContext";
 
-export default function Header({ showMenu = true, onLogout = () => {} }) {
+export default function Header({
+  showMenu = true,
+  onLogout = () => {},
+}: {
+  showMenu?: boolean;
+  onLogout?: () => void;
+}) {
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [activeTab, setActiveTab] = useState("Plan");
@@ -25,11 +31,6 @@ export default function Header({ showMenu = true, onLogout = () => {} }) {
   const { setSidePath } = useNavigationContext();
   const router = useRouter();
   const [viewWidth, setViewWidth] = useState(0);
-
-  const handleLayout = (event: any) => {
-    const { width } = event.nativeEvent.layout;
-    setViewWidth(width);
-  };
   const { user } = useUser();
 
   useEffect(() => {
@@ -50,21 +51,17 @@ export default function Header({ showMenu = true, onLogout = () => {} }) {
           tab = "Statistic";
           break;
       }
-
-      if (tab === activeTab) return;
-      setActiveTab(tab);
-      setSidePath(tab);
+      if (tab !== activeTab) {
+        setActiveTab(tab);
+        setSidePath(tab);
+      }
     };
     loadActiveTab();
   }, [pathname]);
 
-  const toggleSidebar = () => {
-    setIsSidebarVisible(!isSidebarVisible);
-  };
-
-  const toggleDropdown = () => {
-    setIsDropdownVisible(!isDropdownVisible);
-  };
+  const handleLayout = (e: any) => setViewWidth(e.nativeEvent.layout.width);
+  const toggleSidebar = () => setIsSidebarVisible((v) => !v);
+  const toggleDropdown = () => setIsDropdownVisible((v) => !v);
 
   const handleSelectOption = (option: string) => {
     setIsDropdownVisible(false);
@@ -89,6 +86,7 @@ export default function Header({ showMenu = true, onLogout = () => {} }) {
             </Pressable>
           </LinearGradient>
         )}
+
         <Pressable
           style={styles.rightContainer}
           onLayout={handleLayout}
@@ -104,13 +102,14 @@ export default function Header({ showMenu = true, onLogout = () => {} }) {
           <Image
             source={{
               uri:
-                user?.avatarUrl ??
+                user?.avatarUrl ||
                 "https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg",
             }}
             style={styles.avatar}
           />
         </Pressable>
       </View>
+
       <View style={styles.bottomBorder} />
 
       {isDropdownVisible && (
@@ -134,15 +133,17 @@ export default function Header({ showMenu = true, onLogout = () => {} }) {
         </TouchableWithoutFeedback>
       )}
 
-      <Modal
-        transparent={true}
-        visible={isSidebarVisible}
-        onRequestClose={toggleSidebar}
-      >
-        <View style={styles.modalContainer}>
-          <Sidebar initialTab={activeTab} onClose={toggleSidebar} />
-        </View>
-      </Modal>
+      {showMenu && (
+        <Modal
+          transparent
+          visible={isSidebarVisible}
+          onRequestClose={toggleSidebar}
+        >
+          <View style={styles.modalContainer}>
+            <Sidebar initialTab={activeTab} onClose={toggleSidebar} />
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
@@ -150,13 +151,11 @@ export default function Header({ showMenu = true, onLogout = () => {} }) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: 10,
-    width: "100%",
-    backgroundColor: "transparent",
     paddingHorizontal: 20,
+    backgroundColor: "transparent",
   },
   iconContainer: {
     width: 40,
@@ -176,9 +175,9 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 16,
     color: "black",
-    marginRight: 5,
     fontWeight: "500",
     fontFamily: "Poppins_400Regular",
+    marginRight: 5,
   },
   iconDown: {
     marginTop: 2,
@@ -189,7 +188,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   bottomBorder: {
-    borderBottomColor: "rgba(1,1,1,0.1)",
+    borderBottomColor: "rgba(0,0,0,0.1)",
     borderBottomWidth: 1,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
@@ -201,7 +200,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 50,
     right: -80,
-    zIndex: 9999, // Ensure it appears on top
+    zIndex: 9999,
   },
   dropdown: {
     backgroundColor: "#fff",
@@ -223,7 +222,7 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "flex-start",
     alignItems: "flex-start",
   },

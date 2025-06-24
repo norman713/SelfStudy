@@ -36,9 +36,7 @@ export default function Profile() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await userApi.getUserInfo(
-          "554c0f1d-b1f4-4466-8778-8caaff792b45"
-        );
+        const response = await userApi.getUserInfo();
         setUserData({
           username: response.username,
           dateOfBirth: response.dateOfBirth,
