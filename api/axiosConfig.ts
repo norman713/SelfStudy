@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
 const axiosInstance: AxiosInstance = axios.create({
@@ -10,6 +10,20 @@ const axiosInstance: AxiosInstance = axios.create({
     Accept: 'application/json',
   },
 });
+
+// load access token nhét vô request
+axiosInstance.interceptors.request.use(
+  async (config) => {
+    const accessToken = await AsyncStorage.getItem('accessToken');
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 axiosInstance.interceptors.request.use(
   (config) => {
