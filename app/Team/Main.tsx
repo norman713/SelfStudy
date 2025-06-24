@@ -114,7 +114,7 @@ export default function TeamScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <Header />
+      <Header showMenu={false} />
       {/* Search Bar */}
       <View
         style={{
