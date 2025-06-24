@@ -11,6 +11,8 @@ import {
   useBlurOnFulfill,
   useClearByFocusCell,
 } from "react-native-confirmation-code-field";
+import { useLocalSearchParams } from "expo-router";
+import userApi from "@/api/userApi";
 
 export default function Verification() {
   const CELL_COUNT = 4;
@@ -20,7 +22,7 @@ export default function Verification() {
     value,
     setValue,
   });
-
+  const { email, username, dateOfBirth, gender, password } = useLocalSearchParams();
   const loaded = useCustomFonts();
   const [timeLeft, setTimeLeft] = useState(120);
 
@@ -55,7 +57,7 @@ export default function Verification() {
   };
 
   const handleResend = async () => {
-    // TODO: resend logic
+    await userApi.resendCode(email as string)
   };
 
   const handleVerify = async () => {
@@ -67,6 +69,15 @@ export default function Verification() {
         description: "The verification code consists of 4 digits.",
       });
       return;
+    }
+    try {
+      await userApi.register(username as string, email as string, password as string, dateOfBirth as string, gender as string, value);
+      router.replace({
+        pathname: "/Authen/Login",
+
+      });
+    } catch (err) {
+      console.log(err)
     }
   };
 
@@ -81,32 +92,20 @@ export default function Verification() {
         <Text style={styles.instruction}>
           Enter the verification code we just sent on your email address.
         </Text>
-        <CodeField
-          ref={ref}
-          {...props}
+        <TextInput
+          style={styles.input}
           value={value}
           onChangeText={setValue}
-          cellCount={CELL_COUNT}
-          rootStyle={styles.codeFieldRoot}
           keyboardType="number-pad"
           textContentType="oneTimeCode"
-          renderCell={({ index, symbol, isFocused }) => (
-            <View
-              key={index}
-              style={[styles.cell, isFocused && styles.focusCell]}
-              onLayout={getCellOnLayoutHandler(index)}
-            >
-              <Text style={styles.cellText}>
-                {symbol || (isFocused ? <Cursor /> : null)}
-              </Text>
-            </View>
-          )}
+          placeholder="Enter code"
+          autoFocus={true}
         />
 
         <Text style={styles.countdown}>{formatTime(timeLeft)}</Text>
         <CustomButton
           title="Verify"
-          onPress={() => router.push("/Authen/ResetPassword")}
+          onPress={handleVerify}
         ></CustomButton>
         <View style={styles.linkContainer}>
           <Text style={styles.linkText}>Didn't receive a code? </Text>
@@ -208,5 +207,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#000000",
     fontFamily: "Poppins_700Bold",
+  },
+  input: {
+    height: "100%",
+    textAlignVertical: "center",
+    paddingVertical: 0,
+    marginBottom: 10,
+    width: "100%",
+    fontSize: 20,
   },
 });
