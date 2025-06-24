@@ -13,7 +13,7 @@ interface UserInfoResponse {
   id: string
 }
 const userApi = {
-getUserInfoById(userId: string) {
+  getUserInfoById(userId: string) {
     let url = "/users/" + userId
 
     return axiosInstance.get(url);
@@ -36,10 +36,21 @@ getUserInfoById(userId: string) {
     const body = { email, password };
     return axiosInstance.post(url, body);
   },
-  register(username: string, email: string, password: string) {
-    const url = "/auth/register";
-    const body = { username, email, password };
+  validate(username: string, email: string, password: string, dateOfBirth: string, gender: string) {
+    const url = "/auth/validate";
+    const body = { username, email, password, dateOfBirth, gender };
+    console.log(body);
     return axiosInstance.post(url, body);
+  },
+  register(username: string, email: string, password: string, dateOfBirth: string, gender: string, code: string) {
+    const url = "/auth/register";
+    const body = { username, email, password, dateOfBirth, gender, verificationCode: code };
+    console.log(body);
+    return axiosInstance.post(url, body);
+  },
+  resendCode(email: string) {
+    const url = "/auth/reset/" + email;
+    return axiosInstance.get(url);
   },
 
 }
