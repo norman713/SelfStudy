@@ -165,11 +165,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dropdownContainer: {
-    borderWidth: 1,
     borderColor: Colors.primary,
     borderRadius: 8,
     marginBottom: 15,
     overflow: "hidden",
+    paddingVertical: 10,
   },
-  picker: { height: 50, width: "100%" },
+  picker: { height: 50, width: "50%" },
 });

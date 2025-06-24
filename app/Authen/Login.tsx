@@ -64,7 +64,6 @@ export default function LoginScreen() {
       setShowError(false);
       setMessage({ title: "", description: "" });
       const userInfo = await userApi.getUserInfo();
-      console.log(userInfo);
       setUser(userInfo);
       router.push("/Me/Plan");
     } catch (err) {
