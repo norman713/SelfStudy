@@ -7,7 +7,7 @@ const axiosInstance: AxiosInstance = axios.create({
   url: apiUrl,
   withCredentials: true, // Bật để gửi credentials (cookies, authorization headers)
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type" : 'application/json',
     Accept: 'application/json',
   },
 });

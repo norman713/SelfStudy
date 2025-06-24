@@ -10,9 +10,9 @@ const teamApi = {
     },
 
     getTeamInfo(id: string){
-  const url="/teams/"+id;
-  return axiosInstance.get(url);
-},
+      const url="/teams/"+id;
+      return axiosInstance.get(url);
+    },
   create(userId: string, name: string, description: string) {
     const url = "/teams?/userId="+userId; 
     const body = {
