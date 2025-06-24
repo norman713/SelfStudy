@@ -169,7 +169,8 @@ export default function PlanScreen() {
           description={planInfo.description}
           startDate={planInfo.startAt}
           endDate={planInfo.endAt}
-          notifyBefore={computeNotifyBefore(new Date(planInfo.endAt), new Date(planInfo.reminders[0]?.remindAt))}
+          notifyBefore="00:00:00" // Placeholder, replace with actual logic
+          // notifyBefore={computeNotifyBefore(new Date(planInfo.endAt), new Date(planInfo.reminders[0]?.remindAt))}
           status={planInfo.completeAt ? "COMPLETED" : "IN_PROGRESS"}
           completeDate={planInfo.completeAt}
           handleChangeValue={handleChange}

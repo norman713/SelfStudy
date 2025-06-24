@@ -34,10 +34,12 @@ export default function APlan({
   completeDate,
   handleChangeValue,
 }: APlanProps) {
+
+  const time = notifyBefore.split(":");
   const [remindBefore, setRemindBefore] = useState({
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
+    hours: Number(time.at(0)),
+    minutes: Number(time.at(1)),
+    seconds: Number(time.at(2)),
   });
   const [startDateForm, setStartDateForm] = useState(
     new Date(startDate.replace(" ", "T"))
@@ -51,34 +53,11 @@ export default function APlan({
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
 
   useEffect(() => {
-    if (startDate) {
-      setStartDateForm(new Date(startDate.replace(" ", "T")));
-    }
-  }, [startDate]);
-
-  useEffect(() => {
-    if (endDate) {
-      setEndDateForm(new Date(endDate.replace(" ", "T")));
-    }
-  }, [endDate]);
-
-  useEffect(() => {
-    if (notifyBefore) {
-      const time = notifyBefore.split(":");
-      setRemindBefore({
-        hours: Number(time.at(0)),
-        minutes: Number(time.at(1)),
-        seconds: Number(time.at(2)),
-      });
-    }
-  }, [notifyBefore]);
-
-  useEffect(() => {
     const iso = formatDateToISOString(endDateForm);
     if (iso !== endDate) {
       handleChangeValue("endDate", iso);
     }
-  }, [endDateForm, endDate, handleChangeValue]);
+  }, [endDateForm]);
 
   const handleDateChange = (
     event: DateTimePickerEvent,

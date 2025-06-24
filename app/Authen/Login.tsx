@@ -86,7 +86,12 @@ export default function LoginScreen() {
     AsyncStorage.getItem("accessToken").then(async (token) => {
       if (token) {
         // If token exists, set it in the user context
-        const userInfo = await userApi.getUserInfo();
+        const userInfo = await userApi.getUserInfo().catch((error) => {
+          console.error("Failed to fetch user info:", error);
+          AsyncStorage.removeItem("accessToken");
+          AsyncStorage.removeItem("refreshToken");
+          return null;
+        });
         setUser(userInfo);
         router.push("/Me/Plan");
       }
