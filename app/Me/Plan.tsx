@@ -4,7 +4,7 @@ import useCustomFonts from "@/hooks/useCustomFonts";
 import Header from "@/components/Header";
 import React, { useEffect, useState } from "react";
 import BottomNavBar from "@/components/navigation/ButtonNavBar";
-import { router, useRouter } from "expo-router";
+import { router, useLocalSearchParams, useRouter } from "expo-router";
 import { Colors } from "@/constants/Colors";
 import { Calendar, DateData } from "react-native-calendars";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -27,13 +27,10 @@ export default function Plan() {
   const { fontsLoaded } = useCustomFonts();
   const router = useRouter();
 
+  const searchParams = useLocalSearchParams();
   if (!fontsLoaded) return null;
 
-  const [markedDatesArray, setMarkedDatesArray] = useState<string[]>([
-    "2025-04-30",
-    "2025-05-01",
-    "2025-05-02",
-  ]);
+  const [markedDatesArray, setMarkedDatesArray] = useState<string[]>([]);
 
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0]);
   const [selectDatePlans, setSelectDatePlans] = useState<Plan[]>([]);
@@ -44,13 +41,13 @@ export default function Plan() {
 
   useEffect(() => {
     if (!selectedDate) return;
-
     userApi.getPersonalPlans(selectedDate).then((data) => {
       const filteredPlans = data as unknown as Plan[];
       setSelectDatePlans(filteredPlans);
+      console.log("Preload:", searchParams.reloadId, "Selected Date:", selectedDate);
       setTodayPlanNum(filteredPlans.length);
     });
-  }, [selectedDate]);
+  }, [selectedDate, searchParams.reloadId]);
 
   // markedDatesArray
   useEffect(() => {

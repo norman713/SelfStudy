@@ -150,14 +150,18 @@ export default function PlanScreen() {
     userApi.updatePlan(id, {
       name: planInfo.name,
       description: planInfo.description,
-      startAt: planInfo.startAt,
-      endAt: planInfo.endAt,
-    })
+      startAt: new Date(planInfo.startAt).toISOString(),
+      endAt: new Date(planInfo.endAt).toISOString(),
+    }).finally(() => {
+      // Mock save: log to console
+      console.log("Saved plan:", planInfo);
+      console.log("Tasks:", tasks);
 
-    // Mock save: log to console
-    console.log("Saved plan:", planInfo);
-    console.log("Tasks:", tasks);
-    router.push("/Me/Plan");
+      router.push({
+        pathname: "/Me/Plan",
+        params: { reloadId: Date.now().toString() },
+      });
+    })
   };
 
 
