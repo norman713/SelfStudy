@@ -117,10 +117,8 @@ export default function PlanScreen() {
 
   const handleDeleteTask = (taskId: string) => {
     userApi.deleteTasks(id, [taskId]).then(() => {
-      router.replace({
-        pathname: "/Me/PlanDetail",
-        params: { planId: id, reloadId: Date.now().toString() }
-      });
+
+      setTasks((prev) => prev?.filter((t) => t.id !== taskId));
     })
   };
 
