@@ -53,7 +53,8 @@ function computeNotifyBefore(endAt: Date, notifyDate: Date): string {
   const end = endAt;
   const notify = notifyDate;
 
-  console.log(end, notify)
+  console.log("End time:", end);
+  console.log("Notify time:", notify);
 
   let diff = end.getTime() - notify.getTime();
 
@@ -102,6 +103,7 @@ export default function PlanScreen() {
     userApi.getPlanByID(id).then((data) => {
       const plan = data as unknown as Plan;
       setPlanInfo(plan);
+      console.log("Plan data:", plan);
       setTasks(plan.tasks || []);
     });
   }, [id]);
@@ -119,7 +121,6 @@ export default function PlanScreen() {
   const handleDeleteTask = (taskId: string) => {
     setTasks((prev) => prev?.filter((t) => t.id !== taskId));
   };
-
 
   const startEditingTask = (taskId: string, name: string) => {
     setEditingTaskId(taskId);
@@ -146,19 +147,19 @@ export default function PlanScreen() {
       return;
     }
 
-
     userApi.updatePlan(id, {
       name: planInfo.name,
       description: planInfo.description,
       startAt: planInfo.startAt,
       endAt: planInfo.endAt,
-      remindTimes: planInfo.reminders.map((r) => r.remindAt),
     })
+
     // Mock save: log to console
     console.log("Saved plan:", planInfo);
     console.log("Tasks:", tasks);
     router.push("/Me/Plan");
   };
+
 
   return (
     <SafeAreaView style={styles.safeview}>
@@ -169,70 +170,70 @@ export default function PlanScreen() {
           description={planInfo.description}
           startDate={planInfo.startAt}
           endDate={planInfo.endAt}
-          notifyBefore="00:00:00" // Placeholder, replace with actual logic
-          // notifyBefore={computeNotifyBefore(new Date(planInfo.endAt), new Date(planInfo.reminders[0]?.remindAt))}
+          notifyBefore={planInfo.reminders[0]?.remindAt ? computeNotifyBefore(new Date(planInfo.endAt), new Date(planInfo.reminders[0]?.remindAt)) : "00:00:00"}
           status={planInfo.completeAt ? "COMPLETED" : "IN_PROGRESS"}
           completeDate={planInfo.completeAt}
           handleChangeValue={handleChange}
         />)}
         <View style={styles.divideLine} />
-      </ScrollView>
-      <View style={styles.tasksSectionWrapper}>
-        <Text style={styles.sectionTitle}>Tasks</Text>
-        {tasks && tasks.map((item) => (
-          <View key={item.id} style={styles.taskContainer}>
-            <Checkbox
-              // isChecked={item.status === "COMPLETED"}
-              isChecked={false}
-              onToggle={(checked) => toggleTaskCompletion(item.id, checked)}
-            />
+        <View style={styles.tasksSectionWrapper}>
+          <Text style={styles.sectionTitle}>Tasks</Text>
+          {tasks && tasks.map((item) => (
+            <View key={item.id} style={styles.taskContainer}>
+              <Checkbox
+                // isChecked={item.status === "COMPLETED"}
+                isChecked={false}
+                onToggle={(checked) => toggleTaskCompletion(item.id, checked)}
+              />
 
-            <View style={styles.taskContent}>
-              {editingTaskId === item.id ? (
-                <TextInput
-                  style={styles.taskInput}
-                  value={editingTaskName}
-                  onChangeText={setEditingTaskName}
-                  onSubmitEditing={() => saveEditedTask(item.id)}
-                />
-              ) : (
-                <TouchableOpacity
-                  onPress={() => startEditingTask(item.id, item.name)}
-                >
-                  <Text
-                    style={[
-                      styles.taskText,
-                      // item.status === "COMPLETED" && styles.taskTextCompleted,
-                    ]}
+              <View style={styles.taskContent}>
+                {editingTaskId === item.id ? (
+                  <TextInput
+                    style={styles.taskInput}
+                    value={editingTaskName}
+                    onChangeText={setEditingTaskName}
+                    onSubmitEditing={() => saveEditedTask(item.id)}
+                  />
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => startEditingTask(item.id, item.name)}
                   >
-                    {item.name}
-                  </Text>
-                </TouchableOpacity>
-              )}
+                    <Text
+                      style={[
+                        styles.taskText,
+                        // item.status === "COMPLETED" && styles.taskTextCompleted,
+                      ]}
+                    >
+                      {item.name}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <TouchableOpacity onPress={() => handleDeleteTask(item.id)}>
+                <MaterialCommunityIcons name="delete" size={24} color="#C0C0C0" />
+              </TouchableOpacity>
             </View>
+          ))}
 
-            <TouchableOpacity onPress={() => handleDeleteTask(item.id)}>
-              <MaterialCommunityIcons name="delete" size={24} color="#C0C0C0" />
+          <View style={styles.addTaskContainer}>
+            <TouchableOpacity onPress={handleAddTask}>
+              <MaterialCommunityIcons
+                name="plus-circle-outline"
+                size={30}
+                color="#7AB2D3"
+              />
             </TouchableOpacity>
-          </View>
-        ))}
-
-        <View style={styles.addTaskContainer}>
-          <TouchableOpacity onPress={handleAddTask}>
-            <MaterialCommunityIcons
-              name="plus-circle-outline"
-              size={30}
-              color="#7AB2D3"
+            <TextInput
+              style={styles.addTaskInput}
+              placeholder="Add new task"
+              value={newTask}
+              onChangeText={setNewTask}
             />
-          </TouchableOpacity>
-          <TextInput
-            style={styles.addTaskInput}
-            placeholder="Add new task"
-            value={newTask}
-            onChangeText={setNewTask}
-          />
+          </View>
         </View>
-      </View>
+
+      </ScrollView>
 
       <View style={styles.buttonContainer}>
         <CustomButton title="Save" onPress={handleSave} />

@@ -71,10 +71,10 @@ const userApi = {
     description: string,
     startAt: string,
     endAt: string,
-    remindTimes: string[],
   }) {
     return axiosInstance.patch(`/plans/${planId}`, planData);
   },
+
   updateTask(planId: string, planData: {
     name: string,
     description: string,

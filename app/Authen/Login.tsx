@@ -85,6 +85,7 @@ export default function LoginScreen() {
   useEffect(() => {
     AsyncStorage.getItem("accessToken").then(async (token) => {
       if (token) {
+        console.log("Token: ", token);
         // If token exists, set it in the user context
         const userInfo = await userApi.getUserInfo().catch((error) => {
           console.error("Failed to fetch user info:", error);
