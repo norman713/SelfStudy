@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
-import Checkbox from "@/components/Checkbox";
+import Checkbox from "@/components/CheckBox";
 import PlanItemNoti from "@/components/plan/PlanItemNoti";
 
 const plansData = [

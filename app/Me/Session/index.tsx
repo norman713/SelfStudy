@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import { Ionicons } from "@expo/vector-icons";
-import Checkbox from "@/components/Checkbox";
+import Checkbox from "@/components/CheckBox";
 import ProgressCircle from "./time";
 import Header from "@/components/Header";
 import { Svg, Rect, Defs, LinearGradient, Stop } from "react-native-svg";

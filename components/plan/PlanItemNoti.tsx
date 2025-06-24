@@ -7,7 +7,7 @@ import Svg, {
   Stop,
   Text as SvgText,
 } from "react-native-svg";
-import Checkbox from "@/components/Checkbox";
+import Checkbox from "@/components/CheckBox";
 import { Colors } from "@/constants/Colors";
 
 interface PlanItemProps {

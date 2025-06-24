@@ -18,7 +18,7 @@ import CustomButton from "@/components/CustomButton";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Error from "@/components/Message/Error";
 import { hasDuplicateStrings } from "@/util/validator";
-import Checkbox from "@/components/Checkbox";
+import Checkbox from "@/components/CheckBox";
 
 type Member = { id: string; name: string; avatar: string };
 type Task = {

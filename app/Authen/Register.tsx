@@ -84,7 +84,7 @@ export default function RegisterScreen() {
       });
       return;
     }
-  
+
     if (!isValidEmail(request.email)) {
       setShowError(true);
       setMessage({
@@ -93,7 +93,7 @@ export default function RegisterScreen() {
       });
       return;
     }
-  
+
     if (request.password !== confirm) {
       setShowError(true);
       setMessage({
@@ -102,7 +102,7 @@ export default function RegisterScreen() {
       });
       return;
     }
-  
+
     try {
       await userApi.register(request.username, request.email, request.password);
       setShowError(false);
@@ -153,10 +153,7 @@ export default function RegisterScreen() {
           />
         </View>
 
-        <CustomButton
-          title="Register"
-          onPress={handleRegister}
-        />
+        <CustomButton title="Register" onPress={handleRegister} />
         <View style={styles.divideContainer}>
           <View style={styles.divideLine}></View>
           <Text style={styles.option}>Or</Text>
