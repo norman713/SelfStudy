@@ -4,7 +4,7 @@ import {
   View,
   Image,
   Linking,
-  Pressable
+  Pressable,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import useCustomFonts from "@/hooks/useCustomFonts";
@@ -32,28 +32,6 @@ export default function LoginScreen() {
   });
   const [loading, setLoading] = useState(false);
 
-  // const handleLogin = async () => {
-  //   if (loginRequest.email == "" || loginRequest.password == "") {
-  //     setShowError(true);
-  //     setMessage({
-  //       title: "Error",
-  //       description: "The email or password is empty.",
-  //     });
-
-  //     return;
-  //   }
-  //   console.log(loginRequest.password);
-
-  //   if (!isValidEmail(loginRequest.email)) {
-  //     setShowError(true);
-  //     setMessage({
-  //       title: "Error",
-  //       description: "Invalid email format.",
-  //     });
-  //     return;
-  //   }
-  // };
-
   const handleLogin = async () => {
     if (loginRequest.email == "" || loginRequest.password == "") {
       setShowError(true);
@@ -73,13 +51,25 @@ export default function LoginScreen() {
     }
     setLoading(true);
     try {
-      const response = await userApi.login(loginRequest.email, loginRequest.password);
-      const { accessToken, refreshToken } = response;
+      // 1. Login lấy token + userId
+      const res = await userApi.login(
+        loginRequest.email,
+        loginRequest.password
+      );
+      // axios trả về AxiosResponse<LoginResponse>, data mới chứa payload
+      const { accessToken, refreshToken, userId } = res.data;
       await AsyncStorage.setItem("accessToken", accessToken);
       await AsyncStorage.setItem("refreshToken", refreshToken);
+      await AsyncStorage.setItem("userId", userId);
+
+      // 2. Fetch profile ngay sau khi có userId
+      const profileRes = await userApi.getUserInfo(userId);
+      const { username, avatar } = profileRes.data;
+      await AsyncStorage.setItem("username", username);
+      await AsyncStorage.setItem("avatar", avatar);
+
       setShowError(false);
-      setMessage({ title: "", description: "" });
-      router.replace("/Team/Plan"); // Chuyển hướng sau khi đăng nhập thành công
+      router.replace("/Team/Plan");
     } catch (err) {
       setShowError(true);
       setMessage({

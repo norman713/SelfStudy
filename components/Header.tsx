@@ -15,69 +15,77 @@ import { useRouter } from "expo-router";
 import Sidebar from "../components/navigation/SideBar";
 import { usePathname } from "expo-router";
 import { useNavigationContext } from "@/context/NavigationContext";
+import userApi from "@/api/userApi";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export default function Header({
-  showMenu = true,
-  username = "User",
-  avatar = null,
-  onLogout = () => {},
-}) {
+export default function Header({ showMenu = true, onLogout = () => {} }) {
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [activeTab, setActiveTab] = useState("Plan");
+  const [username, setUsername] = useState("User");
+  const [avatar, setAvatar] = useState<string | null>(null);
+
   const pathname = usePathname();
   const { setSidePath } = useNavigationContext();
   const router = useRouter();
   const [viewWidth, setViewWidth] = useState(0);
 
-  const handleLayout = (event: any) => {
-    const { width } = event.nativeEvent.layout;
-    setViewWidth(width);
-  };
+  // 1. Lấy userId từ đâu đó (ví dụ AsyncStorage hoặc context)
+  //    Giả sử bạn đã lưu userId trong AsyncStorage sau khi login:
+  //    const userId = await AsyncStorage.getItem("userId");
+  const userId = "CURRENT_USER_ID"; // <-- Thay bằng giá trị thật
 
   useEffect(() => {
-    const loadActiveTab = () => {
-      let tab = "Plan";
-      switch (pathname) {
-        case "/Me/Plan":
-        case "/Team/Plan":
-          tab = "Plan";
-          break;
-        case "/Me/Document":
-          tab = "Document";
-          break;
-        case "/Me/Session":
-          tab = "Session";
-          break;
-        case "/Me/Statistic":
-          tab = "Statistic";
-          break;
+    async function loadUser() {
+      try {
+        const res = await userApi.getUserInfo(userId);
+        setUsername(res.data.username);
+        setAvatar(res.data.avatar);
+      } catch (error) {
+        console.error("Failed to load user info:", error);
       }
+    }
+    loadUser();
+  }, [userId]);
 
-      if (tab === activeTab) return;
-      setActiveTab(tab);
-      setSidePath(tab);
-    };
-    loadActiveTab();
-  }, [pathname]);
-
-  const toggleSidebar = () => {
-    setIsSidebarVisible(!isSidebarVisible);
-  };
-
-  const toggleDropdown = () => {
-    setIsDropdownVisible(!isDropdownVisible);
-  };
+  // Phần còn lại giữ nguyên...
+  const handleLayout = (ev: any) => setViewWidth(ev.nativeEvent.layout.width);
+  const toggleSidebar = () => setIsSidebarVisible((v) => !v);
+  const toggleDropdown = () => setIsDropdownVisible((v) => !v);
 
   const handleSelectOption = (option: string) => {
     setIsDropdownVisible(false);
-    if (option === "Profile") {
-      router.push("/Me/Profile");
-    } else if (option === "Log out") {
+    if (option === "Profile") router.push("/Me/Profile");
+    else if (option === "Log out") {
       onLogout();
       router.push("/Authen/Login");
     }
   };
+
+  useEffect(() => {
+    let tab: string;
+    switch (pathname) {
+      case "/Me/Plan":
+      case "/Team/Plan":
+        tab = "Plan";
+        break;
+      case "/Me/Document":
+        tab = "Document";
+        break;
+      case "/Me/Session":
+        tab = "Session";
+        break;
+      case "/Me/Statistic":
+        tab = "Statistic";
+        break;
+      default:
+        tab = activeTab;
+    }
+    if (tab !== activeTab) {
+      setActiveTab(tab);
+      setSidePath(tab);
+    }
+  }, [pathname]);
 
   return (
     <View style={{ width: "100%" }}>
@@ -107,7 +115,7 @@ export default function Header({
           <Image
             source={{
               uri:
-                avatar ??
+                avatar ||
                 "https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg",
             }}
             style={styles.avatar}
@@ -138,7 +146,7 @@ export default function Header({
       )}
 
       <Modal
-        transparent={true}
+        transparent
         visible={isSidebarVisible}
         onRequestClose={toggleSidebar}
       >
@@ -149,7 +157,6 @@ export default function Header({
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",

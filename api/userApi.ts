@@ -8,7 +8,7 @@ interface LoginResponse {
 
 const userApi = {
   getUserInfo(userId: string) {
-    let url = "/users/" + userId
+    let url = "/api/users/" + userId
 
     return axiosInstance.get(url);
   },
