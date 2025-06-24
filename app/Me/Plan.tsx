@@ -15,8 +15,8 @@ interface Plan {
   id: string;
   name: string;
   description: string;
-  startDate: string;
-  endDate: string;
+  startAt: string;
+  endAt: string;
   notifyBefore: string;
   status: string;
   progress: number;
@@ -47,7 +47,6 @@ export default function Plan() {
 
     userApi.getPersonalPlans(selectedDate).then((data) => {
       const filteredPlans = data as unknown as Plan[];
-      console.log("Filtered Plans for selected date:", filteredPlans);
       setSelectDatePlans(filteredPlans);
       setTodayPlanNum(filteredPlans.length);
     });
@@ -100,12 +99,12 @@ export default function Plan() {
         <View style={styles.calendarContainer}>
           <Calendar
             markedDates={getMarkedDates()}
+            initialDate={new Date().toISOString().split("T")[0]}
             onMonthChange={(date: DateData) => {
               setCurrentSelectMonth(date.month);
               setCurrentSelectYear(date.year);
             }}
             onDayPress={(date: DateData) => {
-              console.log("Selected date:", date.dateString);
               setSelectedDate(date.dateString);
             }}
             theme={{
@@ -124,7 +123,7 @@ export default function Plan() {
               <PlanItem
                 planName={item.name}
                 progress={Number(item.progress) * 100}
-                deadline={item.endDate}
+                deadline={item.endAt}
               />
             </Pressable>
           ))}

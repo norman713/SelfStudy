@@ -43,7 +43,7 @@ const userApi = {
   },
 
   getPersonalPlansInMonths(month: number, year: number) {
-    return axiosInstance.get(`/plans/months`, {
+    return axiosInstance.get(`/plans/month`, {
       params: { month, year }
     });
   },
@@ -66,5 +66,26 @@ const userApi = {
     return axiosInstance.post("/plans", planData);
   },
 
+  updatePlan(planId: string, planData: {
+    name: string,
+    description: string,
+    startAt: string,
+    endAt: string,
+    remindTimes: string[],
+  }) {
+    return axiosInstance.patch(`/plans/${planId}`, planData);
+  },
+  updateTask(planId: string, planData: {
+    name: string,
+    description: string,
+    startAt: string,
+    endAt: string,
+    remindTimes: string[],
+  }) {
+    return axiosInstance.patch(`/tasks/personal`, planData);
+  },
+  getPlanByID(planId: string) {
+    return axiosInstance.get(`/plans/${planId}`);
+  }
 }
 export default userApi;
