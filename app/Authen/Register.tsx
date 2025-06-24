@@ -16,6 +16,8 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { isValidEmail } from "@/util/validator";
 import { Colors } from "@/constants/Colors";
+import userApi from "@/api/userApi";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function RegisterScreen() {
   const { fontsLoaded } = useCustomFonts();
@@ -35,6 +37,39 @@ export default function RegisterScreen() {
     return null;
   }
 
+  // const handleRegister = async () => {
+  //   if (
+  //     request.username === "" ||
+  //     request.email === "" ||
+  //     request.password === "" ||
+  //     confirm === ""
+  //   ) {
+  //     setShowError(true);
+  //     setMessage({
+  //       title: "Error",
+  //       description: "All fields are required.",
+  //     });
+  //     return;
+  //   }
+
+  //   if (!isValidEmail(request.email)) {
+  //     setShowError(true);
+  //     setMessage({
+  //       title: "Error",
+  //       description: "Invalid email format.",
+  //     });
+  //     return;
+  //   }
+
+  //   if (request.password !== confirm) {
+  //     setShowError(true);
+  //     setMessage({
+  //       title: "Error",
+  //       description: "The password and the confirmation password must match.",
+  //     });
+  //     return;
+  //   }
+  // };
   const handleRegister = async () => {
     if (
       request.username === "" ||
@@ -67,8 +102,20 @@ export default function RegisterScreen() {
       });
       return;
     }
-  };
 
+    try {
+      await userApi.register(request.username, request.email, request.password);
+      setShowError(false);
+      setMessage({ title: "", description: "" });
+      router.replace("/Authen/Login"); // Chuyển hướng sau khi đăng ký thành công
+    } catch (err) {
+      setShowError(true);
+      setMessage({
+        title: "Register failed",
+        description: "Email may already exist or server error.",
+      });
+    }
+  };
   const updateField = (fieldName: keyof typeof request, value: string) => {
     setRequest((prevState) => ({
       ...prevState,
@@ -106,10 +153,7 @@ export default function RegisterScreen() {
           />
         </View>
 
-        <CustomButton
-          title="Register"
-          onPress={() => router.push("/Authen/Login")}
-        />
+        <CustomButton title="Register" onPress={handleRegister} />
         <View style={styles.divideContainer}>
           <View style={styles.divideLine}></View>
           <Text style={styles.option}>Or</Text>

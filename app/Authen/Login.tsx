@@ -4,7 +4,7 @@ import {
   View,
   Image,
   Linking,
-  Pressable,
+  Pressable
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import useCustomFonts from "@/hooks/useCustomFonts";
@@ -16,6 +16,8 @@ import BackButton from "@/components/BackButton";
 import { Colors } from "@/constants/Colors";
 import { useState } from "react";
 import { isValidEmail } from "@/util/validator";
+import userApi from "@/api/userApi";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function LoginScreen() {
   const { fontsLoaded } = useCustomFonts();
@@ -30,6 +32,28 @@ export default function LoginScreen() {
   });
   const [loading, setLoading] = useState(false);
 
+  // const handleLogin = async () => {
+  //   if (loginRequest.email == "" || loginRequest.password == "") {
+  //     setShowError(true);
+  //     setMessage({
+  //       title: "Error",
+  //       description: "The email or password is empty.",
+  //     });
+
+  //     return;
+  //   }
+  //   console.log(loginRequest.password);
+
+  //   if (!isValidEmail(loginRequest.email)) {
+  //     setShowError(true);
+  //     setMessage({
+  //       title: "Error",
+  //       description: "Invalid email format.",
+  //     });
+  //     return;
+  //   }
+  // };
+
   const handleLogin = async () => {
     if (loginRequest.email == "" || loginRequest.password == "") {
       setShowError(true);
@@ -37,11 +61,8 @@ export default function LoginScreen() {
         title: "Error",
         description: "The email or password is empty.",
       });
-
       return;
     }
-    console.log(loginRequest.password);
-
     if (!isValidEmail(loginRequest.email)) {
       setShowError(true);
       setMessage({
@@ -49,6 +70,24 @@ export default function LoginScreen() {
         description: "Invalid email format.",
       });
       return;
+    }
+    setLoading(true);
+    try {
+      const response = await userApi.login(loginRequest.email, loginRequest.password);
+      const { accessToken, refreshToken } = response;
+      await AsyncStorage.setItem("accessToken", accessToken);
+      await AsyncStorage.setItem("refreshToken", refreshToken);
+      setShowError(false);
+      setMessage({ title: "", description: "" });
+      router.replace("/Team/Plan"); // Chuyển hướng sau khi đăng nhập thành công
+    } catch (err) {
+      setShowError(true);
+      setMessage({
+        title: "Login failed",
+        description: "Email or password is incorrect.",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -88,7 +127,7 @@ export default function LoginScreen() {
         <Link style={styles.link} href="/Authen/ForgotPassword">
           Forgot password?
         </Link>
-        <CustomButton title="Login" onPress={() => router.push("/Team/Plan")} />
+        <CustomButton title="Login" onPress={handleLogin} />
         <View style={styles.divideContainer}>
           <View style={styles.divideLine}></View>
           <Text style={styles.option}>Or</Text>
