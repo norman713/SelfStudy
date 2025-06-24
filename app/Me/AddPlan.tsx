@@ -15,6 +15,7 @@ import CustomButton from "@/components/CustomButton";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Error from "@/components/Message/Error";
 import { hasDuplicateStrings } from "@/util/validator";
+import userApi from "@/api/userApi";
 
 export default function PlanScreen() {
   const [planInfo, setPlanInfo] = useState({
@@ -76,6 +77,27 @@ export default function PlanScreen() {
       return;
     }
 
+    // Calculate remindTimes based on notifyBefore (format: "HH:mm:ss")
+    const [hours, minutes, seconds] = planInfo.notifyBefore.split(":").map(Number);
+    const endDate = new Date(planInfo.endDate);
+    const remindTime = new Date(endDate);
+    remindTime.setHours(remindTime.getHours() - hours);
+    remindTime.setMinutes(remindTime.getMinutes() - minutes);
+    remindTime.setSeconds(remindTime.getSeconds() - seconds);
+
+    const newData = {
+      name: planInfo.name,
+      description: planInfo.description,
+      startAt: planInfo.startDate,
+      endAt: planInfo.endDate,
+      remindTimes: [remindTime.toISOString()],
+      tasks: tasks.map((task) => task.name)
+    }
+
+    userApi.addPlan(newData).then(() => {
+      console.log("Plan saved successfully");
+      router.push("/Me/Plan");
+    })
     setLoading(true);
     // Mock save delay
     setTimeout(() => {

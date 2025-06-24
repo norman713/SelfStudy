@@ -13,14 +13,14 @@ interface UserInfoResponse {
   id: string
 }
 const userApi = {
-getUserInfoById(userId: string) {
+  getUserInfoById(userId: string) {
     let url = "/users/" + userId
 
     return axiosInstance.get(url);
   },
   getUserInfo(): Promise<UserInfoResponse> {
 
-    let url = "/api/users"
+    let url = "/users"
     return axiosInstance.get(url);
   },
 
@@ -32,14 +32,38 @@ getUserInfoById(userId: string) {
   },
 
   login(email: string, password: string): Promise<LoginResponse> {
-    const url = "/api/auth/cred";
+    const url = "/auth/cred";
     const body = { email, password };
     return axiosInstance.post(url, body);
   },
   register(username: string, email: string, password: string) {
-    const url = "/api/auth/register";
+    const url = "/auth/register";
     const body = { username, email, password };
     return axiosInstance.post(url, body);
+  },
+
+  getPersonalPlansInMonths(month: number, year: number) {
+    return axiosInstance.get(`/plans/months`, {
+      params: { month, year }
+    });
+  },
+  getPersonalPlans(date: string) {
+    return axiosInstance.get(`/plans/date?date=${date}`);
+  },
+
+  getPlansById(planId: string) {
+    return axiosInstance.get(`/plans/${planId}`);
+  },
+
+  addPlan(planData: {
+    name: string,
+    description: string,
+    startAt: string,
+    endAt: string,
+    remindTimes: string[],
+    tasks: string[]
+  }) {
+    return axiosInstance.post("/plans", planData);
   },
 
 }
