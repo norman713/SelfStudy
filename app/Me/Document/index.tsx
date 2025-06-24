@@ -16,6 +16,7 @@ import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
 import Header from "@/components/Header";
 import BottomNavBar from "@/components/navigation/ButtonNavBar";
 import folderApi from "@/api/folderApi";
+import { Platform } from 'react-native';
 
 interface DocInfo {
   name: string;
@@ -92,12 +93,19 @@ export default function Page() {
       if (!res.canceled && res.assets && res.assets.length > 0) {
         // Chuẩn bị file cho FormData
         console.log(res);
-        const file = res.assets[0];
-        const fileToUpload: any = {
-          uri: file.uri,
-          name: file.name,
-          type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        };
+        const fileAsset = res.assets[0];
+        let fileToUpload: any;
+        if (Platform.OS === 'web') {
+          // Nếu là web, dùng File hoặc Blob
+          fileToUpload = fileAsset.file || new File([fileAsset], fileAsset.name, { type: fileAsset.mimeType });
+        } else {
+          // Nếu là mobile, dùng object { uri, name, type }
+          fileToUpload = {
+            uri: fileAsset.uri,
+            name: fileAsset.name,
+            type: fileAsset.mimeType || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          };
+        }
         // Gọi API upload
         await folderApi.uploadFile(expandedFolder, fileToUpload, file.name);
         // Thêm vào UI (có thể reload lại folder từ server nếu muốn)
