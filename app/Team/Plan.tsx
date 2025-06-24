@@ -8,6 +8,7 @@ import BottomNavBar from "../../components/navigation/ButtonNavBar";
 import { router, useNavigation } from "expo-router";
 import PlanList from "@/components/plan/PlanListTeam";
 import { Colors } from "@/constants/Colors";
+import { Picker } from "@react-native-picker/picker";
 
 // helper lấy ngày hôm nay dưới dạng "YYYY-MM-DD"
 const getTodayString = () => new Date().toISOString().split("T")[0];
@@ -26,10 +27,18 @@ const mockPlans: MockPlan[] = [
   { planName: "Client call", date: "2025-06-25" },
 ];
 
+const mockGroups = [
+  { id: "g1", name: "Group A" },
+  { id: "g2", name: "Group B" },
+  { id: "g3", name: "Group C" },
+];
 export default function Plan() {
   const { fontsLoaded } = useCustomFonts();
   const [selectedDate, setSelectedDate] = useState<string>(getTodayString());
   const navigation = useNavigation();
+
+  const [groups] = useState(mockGroups);
+  const [selectedGroup, setSelectedGroup] = useState(groups[0].id);
 
   if (!fontsLoaded) return null;
 
@@ -62,6 +71,19 @@ export default function Plan() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <Header />
+
+      {/* Dropdown for groups */}
+      <View style={styles.dropdownContainer}>
+        <Picker
+          selectedValue={selectedGroup}
+          onValueChange={(itemValue) => setSelectedGroup(itemValue)}
+          style={styles.picker}
+        >
+          {groups.map((group) => (
+            <Picker.Item key={group.id} label={group.name} value={group.id} />
+          ))}
+        </Picker>
+      </View>
       <ScrollView contentContainerStyle={styles.scrollViewContainer}>
         <Text style={styles.title}>
           Hey, you have{" "}
@@ -142,4 +164,12 @@ const styles = StyleSheet.create({
   bottom: {
     alignItems: "center",
   },
+  dropdownContainer: {
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    borderRadius: 8,
+    marginBottom: 15,
+    overflow: "hidden",
+  },
+  picker: { height: 50, width: "100%" },
 });

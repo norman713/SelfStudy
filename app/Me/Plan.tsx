@@ -127,6 +127,7 @@ export default function Plan() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <Header />
+
       <ScrollView contentContainerStyle={styles.scrollViewContainer}>
         <Text style={styles.title}>
           Hey, you have <Text style={styles.highlightText}>{todayPlanNum}</Text>{" "}
@@ -199,6 +200,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(1,1,1,0.1)",
     borderWidth: 1,
   },
+
   planListContainer: {
     flex: 1,
     width: "100%",
