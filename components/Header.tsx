@@ -15,77 +15,66 @@ import { useRouter } from "expo-router";
 import Sidebar from "../components/navigation/SideBar";
 import { usePathname } from "expo-router";
 import { useNavigationContext } from "@/context/NavigationContext";
-import userApi from "@/api/userApi";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useUser } from "../context/UserContext";
 
 export default function Header({ showMenu = true, onLogout = () => {} }) {
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [activeTab, setActiveTab] = useState("Plan");
-  const [username, setUsername] = useState("User");
-  const [avatar, setAvatar] = useState<string | null>(null);
-
   const pathname = usePathname();
   const { setSidePath } = useNavigationContext();
   const router = useRouter();
   const [viewWidth, setViewWidth] = useState(0);
 
-  // 1. Lấy userId từ đâu đó (ví dụ AsyncStorage hoặc context)
-  //    Giả sử bạn đã lưu userId trong AsyncStorage sau khi login:
-  //    const userId = await AsyncStorage.getItem("userId");
-  const userId = "CURRENT_USER_ID"; // <-- Thay bằng giá trị thật
+  const handleLayout = (event: any) => {
+    const { width } = event.nativeEvent.layout;
+    setViewWidth(width);
+  };
+  const { user } = useUser();
 
   useEffect(() => {
-    async function loadUser() {
-      try {
-        const res = await userApi.getUserInfo(userId);
-        setUsername(res.data.username);
-        setAvatar(res.data.avatar);
-      } catch (error) {
-        console.error("Failed to load user info:", error);
+    const loadActiveTab = () => {
+      let tab = "Plan";
+      switch (pathname) {
+        case "/Me/Plan":
+        case "/Team/Plan":
+          tab = "Plan";
+          break;
+        case "/Me/Document":
+          tab = "Document";
+          break;
+        case "/Me/Session":
+          tab = "Session";
+          break;
+        case "/Me/Statistic":
+          tab = "Statistic";
+          break;
       }
-    }
-    loadUser();
-  }, [userId]);
 
-  // Phần còn lại giữ nguyên...
-  const handleLayout = (ev: any) => setViewWidth(ev.nativeEvent.layout.width);
-  const toggleSidebar = () => setIsSidebarVisible((v) => !v);
-  const toggleDropdown = () => setIsDropdownVisible((v) => !v);
+      if (tab === activeTab) return;
+      setActiveTab(tab);
+      setSidePath(tab);
+    };
+    loadActiveTab();
+  }, [pathname]);
+
+  const toggleSidebar = () => {
+    setIsSidebarVisible(!isSidebarVisible);
+  };
+
+  const toggleDropdown = () => {
+    setIsDropdownVisible(!isDropdownVisible);
+  };
 
   const handleSelectOption = (option: string) => {
     setIsDropdownVisible(false);
-    if (option === "Profile") router.push("/Me/Profile");
-    else if (option === "Log out") {
+    if (option === "Profile") {
+      router.push("/Me/Profile");
+    } else if (option === "Log out") {
       onLogout();
       router.push("/Authen/Login");
     }
   };
-
-  useEffect(() => {
-    let tab: string;
-    switch (pathname) {
-      case "/Me/Plan":
-      case "/Team/Plan":
-        tab = "Plan";
-        break;
-      case "/Me/Document":
-        tab = "Document";
-        break;
-      case "/Me/Session":
-        tab = "Session";
-        break;
-      case "/Me/Statistic":
-        tab = "Statistic";
-        break;
-      default:
-        tab = activeTab;
-    }
-    if (tab !== activeTab) {
-      setActiveTab(tab);
-      setSidePath(tab);
-    }
-  }, [pathname]);
 
   return (
     <View style={{ width: "100%" }}>
@@ -111,11 +100,11 @@ export default function Header({ showMenu = true, onLogout = () => {} }) {
             color={Colors.primary}
             style={styles.iconDown}
           />
-          <Text style={styles.userName}>{username}</Text>
+          <Text style={styles.userName}>{user?.username}</Text>
           <Image
             source={{
               uri:
-                avatar ||
+                user?.avatarUrl ??
                 "https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg",
             }}
             style={styles.avatar}
@@ -146,7 +135,7 @@ export default function Header({ showMenu = true, onLogout = () => {} }) {
       )}
 
       <Modal
-        transparent
+        transparent={true}
         visible={isSidebarVisible}
         onRequestClose={toggleSidebar}
       >
@@ -157,6 +146,7 @@ export default function Header({ showMenu = true, onLogout = () => {} }) {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",

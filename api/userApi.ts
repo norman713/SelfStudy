@@ -3,15 +3,27 @@ import axiosInstance from "./axiosConfig";
 interface LoginResponse {
   accessToken: string;
   refreshToken: string;
-  // Thêm các trường khác nếu có (ví dụ: userId, message, etc.)
-}
 
+}
+interface UserInfoResponse {
+  username: string;
+  dateOfBirth: string;
+  gender: string;
+  avatarUrl: string;
+  id: string
+}
 const userApi = {
-  getUserInfo(userId: string) {
-    let url = "/api/users/" + userId
+getUserInfoById(userId: string) {
+    let url = "/users/" + userId
 
     return axiosInstance.get(url);
   },
+  getUserInfo(): Promise<UserInfoResponse> {
+
+    let url = "/api/users"
+    return axiosInstance.get(url);
+  },
+
   updateUserInfo(userId: string, userData: { username: string; dateOfBirth: string; gender: string }) {
     let url = "/users/" + userId;
 

@@ -18,6 +18,7 @@ import { useState } from "react";
 import { isValidEmail } from "@/util/validator";
 import userApi from "@/api/userApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useUser } from "../../context/UserContext";
 
 export default function LoginScreen() {
   const { fontsLoaded } = useCustomFonts();
@@ -30,29 +31,9 @@ export default function LoginScreen() {
     title: "",
     description: "",
   });
+  const { setUser } = useUser();
+
   const [loading, setLoading] = useState(false);
-
-  // const handleLogin = async () => {
-  //   if (loginRequest.email == "" || loginRequest.password == "") {
-  //     setShowError(true);
-  //     setMessage({
-  //       title: "Error",
-  //       description: "The email or password is empty.",
-  //     });
-
-  //     return;
-  //   }
-  //   console.log(loginRequest.password);
-
-  //   if (!isValidEmail(loginRequest.email)) {
-  //     setShowError(true);
-  //     setMessage({
-  //       title: "Error",
-  //       description: "Invalid email format.",
-  //     });
-  //     return;
-  //   }
-  // };
 
   const handleLogin = async () => {
     if (loginRequest.email == "" || loginRequest.password == "") {
@@ -82,7 +63,10 @@ export default function LoginScreen() {
       await AsyncStorage.setItem("refreshToken", refreshToken);
       setShowError(false);
       setMessage({ title: "", description: "" });
-      router.replace("/Team/Plan"); // Chuyển hướng sau khi đăng nhập thành công
+      const userInfo = await userApi.getUserInfo();
+      console.log(userInfo);
+      setUser(userInfo);
+      router.push("/Me/Plan");
     } catch (err) {
       setShowError(true);
       setMessage({

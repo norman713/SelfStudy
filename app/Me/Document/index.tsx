@@ -8,12 +8,13 @@ import {
   StyleSheet,
   Linking,
   SafeAreaView,
+  Modal,
+  TextInput,
+  Alert,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
-import { Alert } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Header from "@/components/Header";
-
 import BottomNavBar from "@/components/navigation/ButtonNavBar";
 
 interface DocInfo {
@@ -22,26 +23,41 @@ interface DocInfo {
   size?: number;
 }
 
-export default function Page() {
-  const [docs, setDocs] = useState<DocInfo[]>([
-    {
-      name: "ProjectProposal.pdf",
-      uri: "https://example.com/ProjectProposal.pdf",
-      size: 256000,
-    },
-    {
-      name: "MeetingNotes.docx",
-      uri: "https://example.com/MeetingNotes.docx",
-      size: 51200,
-    },
-    {
-      name: "BudgetReport.pdf",
-      uri: "https://example.com/BudgetReport.pdf",
-      size: 128000,
-    },
-  ]);
+interface Folder {
+  id: string;
+  name: string;
+  docs: DocInfo[];
+}
 
+export default function Page() {
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [isFolderModalVisible, setFolderModalVisible] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+
+  // Tạo folder mới
+  const handleAddFolder = () => {
+    if (!newFolderName.trim()) {
+      Alert.alert("Lỗi", "Tên folder không được để trống.");
+      return;
+    }
+    const id = Date.now().toString();
+    setFolders((prev) => [
+      ...prev,
+      { id, name: newFolderName.trim(), docs: [] },
+    ]);
+    setNewFolderName("");
+    setFolderModalVisible(false);
+  };
+
+  // Chọn folder
+  const openFolder = (folderId: string) => {
+    setCurrentFolderId(folderId === currentFolderId ? null : folderId);
+  };
+
+  // Chọn file và thêm vào folder đang mở
   const pickDoc = async () => {
+    if (!currentFolderId) return;
     try {
       const result: any = await DocumentPicker.getDocumentAsync({
         type: [
@@ -53,18 +69,26 @@ export default function Page() {
       });
       if (result.type === "success") {
         const { name, uri, size } = result;
-        setDocs((prev) => [...prev, { name, uri, size }]);
+        setFolders((prev) =>
+          prev.map((f) =>
+            f.id === currentFolderId
+              ? { ...f, docs: [...f.docs, { name, uri, size }] }
+              : f
+          )
+        );
       }
     } catch (err) {
       console.error("DocumentPicker Error:", err);
     }
   };
 
+  // Mở document
   const openDoc = async (uri: string) => {
     await Linking.openURL(uri);
   };
 
-  const confirmDelete = (uriToDelete: string) => {
+  // Xác nhận xóa document
+  const confirmDeleteDoc = (folderId: string, uriToDelete: string) => {
     Alert.alert(
       "Xác nhận xóa",
       "Bạn có chắc muốn xóa tài liệu này?",
@@ -74,7 +98,13 @@ export default function Page() {
           text: "Xóa",
           style: "destructive",
           onPress: () => {
-            setDocs((prev) => prev.filter((doc) => doc.uri !== uriToDelete));
+            setFolders((prev) =>
+              prev.map((f) =>
+                f.id === folderId
+                  ? { ...f, docs: f.docs.filter((d) => d.uri !== uriToDelete) }
+                  : f
+              )
+            );
           },
         },
       ],
@@ -85,93 +115,175 @@ export default function Page() {
   return (
     <SafeAreaView style={styles.container}>
       <Header />
+
+      {/* Thêm Folder */}
+      <View style={styles.controls}>
+        <Button
+          title="➕ Thêm Folder"
+          onPress={() => setFolderModalVisible(true)}
+        />
+      </View>
+
+      {/* Danh sách Folder & Docs */}
       <FlatList
-        style={styles.list}
-        data={docs}
-        keyExtractor={(item) => item.uri}
+        data={folders}
+        keyExtractor={(f) => f.id}
         contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <View style={styles.item}>
+        renderItem={({ item: folder }) => (
+          <View style={styles.folderContainer}>
             <TouchableOpacity
-              style={styles.fileInfo}
-              onPress={() => openDoc(item.uri)}
+              style={styles.folderHeader}
+              onPress={() => openFolder(folder.id)}
             >
-              <Text style={styles.name} numberOfLines={1}>
-                {item.name}
-              </Text>
-              {item.size !== undefined && (
-                <Text style={styles.size}>
-                  {(item.size / 1024).toFixed(1)} KB
-                </Text>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => confirmDelete(item.uri)}>
               <MaterialCommunityIcons
-                name="trash-can-outline"
+                name="folder-outline"
                 size={24}
-                color="#C0C0C0"
+                color="#FFD700"
               />
+              <Text style={styles.folderName}>{folder.name}</Text>
+              <Text style={styles.count}>({folder.docs.length})</Text>
             </TouchableOpacity>
+
+            {currentFolderId === folder.id && (
+              <View style={styles.docsSection}>
+                {/* Nút thêm Document chỉ hiện khi folder được mở */}
+                <Button title="📄 Thêm Document" onPress={pickDoc} />
+
+                {/* List các Document */}
+                {folder.docs.length === 0 ? (
+                  <Text style={styles.empty}>Chưa có file nào.</Text>
+                ) : (
+                  folder.docs.map((doc) => (
+                    <View key={doc.uri} style={styles.docItem}>
+                      <TouchableOpacity
+                        style={styles.fileInfo}
+                        onPress={() => openDoc(doc.uri)}
+                      >
+                        <Text style={styles.name} numberOfLines={1}>
+                          {doc.name}
+                        </Text>
+                        {doc.size !== undefined && (
+                          <Text style={styles.size}>
+                            {(doc.size / 1024).toFixed(1)} KB
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => confirmDeleteDoc(folder.id, doc.uri)}
+                      >
+                        <MaterialCommunityIcons
+                          name="trash-can-outline"
+                          size={24}
+                          color="#C0C0C0"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  ))
+                )}
+              </View>
+            )}
           </View>
         )}
-        ListEmptyComponent={<Text style={styles.empty}>Chưa có file nào.</Text>}
+        ListEmptyComponent={
+          <Text style={styles.empty}>
+            Chưa có folder nào. Nhấn “Thêm Folder” để bắt đầu.
+          </Text>
+        }
       />
-      <View style={styles.buttonWrapper}>
-        <Button title="Chọn PDF/Word" onPress={pickDoc} color="#7AB2D3" />
-        <View style={styles.spacer} />
-        <BottomNavBar />
-      </View>
+
+      <BottomNavBar />
+
+      {/* Modal tạo Folder */}
+      <Modal
+        transparent
+        visible={isFolderModalVisible}
+        animationType="slide"
+        onRequestClose={() => setFolderModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Tạo Folder Mới</Text>
+            <TextInput
+              placeholder="Tên folder"
+              value={newFolderName}
+              onChangeText={setNewFolderName}
+              style={styles.input}
+            />
+            <View style={styles.modalButtons}>
+              <Button
+                title="Hủy"
+                onPress={() => setFolderModalVisible(false)}
+              />
+              <Button title="Tạo" onPress={handleAddFolder} />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFF",
-  },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    paddingTop: 20,
+  container: { flex: 1, backgroundColor: "#FFF" },
+  controls: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
     paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  item: {
+  listContent: { paddingHorizontal: 16 },
+  folderContainer: {
+    marginBottom: 12,
+    backgroundColor: "#F0F8FF",
+    borderRadius: 8,
+  },
+  folderHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+  },
+  folderName: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
+    flex: 1,
+  },
+  count: { fontSize: 14, color: "#555" },
+  docsSection: { paddingHorizontal: 12, paddingBottom: 12 },
+  docItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: "#F5F5F5",
-    marginBottom: 12,
+    paddingVertical: 8,
+    borderBottomColor: "#DDD",
+    borderBottomWidth: 1,
   },
-  fileInfo: {
+  fileInfo: { flex: 1, marginRight: 8 },
+  name: { fontSize: 15, color: "#333" },
+  size: { fontSize: 13, color: "#666", marginTop: 2 },
+  empty: { textAlign: "center", color: "#999", padding: 16 },
+  modalOverlay: {
     flex: 1,
-    marginRight: 8,
-  },
-  name: {
-    fontSize: 16,
-    color: "#333",
-  },
-  size: {
-    marginTop: 4,
-    fontSize: 14,
-    color: "#888",
-  },
-  empty: {
-    textAlign: "center",
-    marginTop: 40,
-    color: "#AAA",
-  },
-  buttonWrapper: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#EEE",
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
     alignItems: "center",
-    width: "100%",
   },
-  spacer: {
-    height: 20, // cách 10px giữa nút và navbar
+  modalContent: {
+    width: "80%",
+    backgroundColor: "#FFF",
+    padding: 20,
+    borderRadius: 8,
+  },
+  modalTitle: { fontSize: 18, fontWeight: "600", marginBottom: 12 },
+  input: {
+    borderWidth: 1,
+    borderColor: "#CCC",
+    borderRadius: 6,
+    padding: 8,
+    marginBottom: 16,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
 });
