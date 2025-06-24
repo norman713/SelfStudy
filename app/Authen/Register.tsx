@@ -25,6 +25,8 @@ export default function RegisterScreen() {
     username: "",
     email: "",
     password: "",
+    gender: "",
+    dateOfBirth: "",
   });
   const [confirm, setConfirm] = useState("");
   const [showError, setShowError] = useState(false);
@@ -75,7 +77,8 @@ export default function RegisterScreen() {
       request.username === "" ||
       request.email === "" ||
       request.password === "" ||
-      confirm === ""
+      request.gender === "" ||
+      request.dateOfBirth === ""
     ) {
       setShowError(true);
       setMessage({
@@ -104,10 +107,19 @@ export default function RegisterScreen() {
     }
 
     try {
-      await userApi.register(request.username, request.email, request.password);
+      await userApi.validate(request.username, request.email, request.password, request.dateOfBirth, request.gender,);
       setShowError(false);
       setMessage({ title: "", description: "" });
-      router.replace("/Authen/Login"); // Chuyển hướng sau khi đăng ký thành công
+      router.replace({
+        pathname: "/Authen/Verification",
+        params: {
+          email: request.email,
+          username: request.username,
+          password: request.password,
+          gender: request.gender,
+          dateOfBirth: request.dateOfBirth,
+        },
+      });
     } catch (err) {
       setShowError(true);
       setMessage({
@@ -140,6 +152,16 @@ export default function RegisterScreen() {
             placeholder="Enter email"
             style={styles.input}
             onChangeText={(text) => updateField("email", text)}
+          />
+          <LoginInput
+            placeholder="Enter gender"
+            style={styles.input}
+            onChangeText={(text) => updateField("gender", text)}
+          />
+          <LoginInput
+            placeholder="Enter date of birth"
+            style={styles.input}
+            onChangeText={(text) => updateField("dateOfBirth", text)}
           />
           <PasswordInput
             placeholder="Enter password"
