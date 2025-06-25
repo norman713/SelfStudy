@@ -32,7 +32,9 @@ export default function Plan() {
 
   const [markedDatesArray, setMarkedDatesArray] = useState<string[]>([]);
 
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(
+    new Date().toISOString().split("T")[0]
+  );
   const [selectDatePlans, setSelectDatePlans] = useState<Plan[]>([]);
   const [todayPlanNum, setTodayPlanNum] = useState(0);
 
@@ -44,18 +46,27 @@ export default function Plan() {
     userApi.getPersonalPlans(selectedDate).then((data) => {
       const filteredPlans = data as unknown as Plan[];
       setSelectDatePlans(filteredPlans);
-      console.log("Preload:", searchParams.reloadId, "Selected Date:", selectedDate);
-      setTodayPlanNum(filteredPlans.length);
+      console.log(
+        "Preload:",
+        searchParams.reloadId,
+        "Selected Date:",
+        selectedDate
+      );
+      const today = new Date().toISOString().split("T")[0];
+      if (selectedDate === today) {
+        setTodayPlanNum(filteredPlans.length);
+      }
     });
   }, [selectedDate, searchParams.reloadId]);
 
   // markedDatesArray
   useEffect(() => {
-    userApi.getPersonalPlansInMonths(currentSelectMonth, currentSelectYear).then(data => {
-
-      const dates = data as unknown as string[];
-      setMarkedDatesArray(dates);
-    })
+    userApi
+      .getPersonalPlansInMonths(currentSelectMonth, currentSelectYear)
+      .then((data) => {
+        const dates = data as unknown as string[];
+        setMarkedDatesArray(dates);
+      });
   }, [currentSelectMonth, currentSelectYear]);
 
   const getMarkedDates = () => {

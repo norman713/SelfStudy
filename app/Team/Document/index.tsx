@@ -2,19 +2,21 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  Button,
+  SafeAreaView,
   FlatList,
   TouchableOpacity,
-  StyleSheet,
+  Modal,
+  TextInput,
   Linking,
-  SafeAreaView,
+  StyleSheet,
+  Alert,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
-import { Alert } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
 import Header from "@/components/Header";
-
 import BottomNavBar from "@/components/navigation/ButtonNavBar";
+import folderApi from "@/api/folderApi";
+import { Platform } from "react-native";
 
 interface DocInfo {
   name: string;
@@ -22,156 +24,392 @@ interface DocInfo {
   size?: number;
 }
 
-export default function Page() {
-  const [docs, setDocs] = useState<DocInfo[]>([
-    {
-      name: "ProjectProposal.pdf",
-      uri: "https://example.com/ProjectProposal.pdf",
-      size: 256000,
-    },
-    {
-      name: "MeetingNotes.docx",
-      uri: "https://example.com/MeetingNotes.docx",
-      size: 51200,
-    },
-    {
-      name: "BudgetReport.pdf",
-      uri: "https://example.com/BudgetReport.pdf",
-      size: 128000,
-    },
-  ]);
+interface Folder {
+  id: string;
+  name: string;
+  docs: DocInfo[];
+}
 
-  const pickDoc = async () => {
+export default function Page() {
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [expandedFolder, setExpandedFolder] = useState<string | null>(null);
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+
+  // Tạo folder mới
+  const handleAddFolder = async () => {
+    if (!newFolderName.trim()) {
+      Alert.alert("Lỗi", "Tên folder không được để trống.");
+      return;
+    }
     try {
-      const result: any = await DocumentPicker.getDocumentAsync({
-        type: [
-          "application/pdf",
-          "application/msword",
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        ],
-        copyToCacheDirectory: false,
-      });
-      if (result.type === "success") {
-        const { name, uri, size } = result;
-        setDocs((prev) => [...prev, { name, uri, size }]);
-      }
-    } catch (err) {
-      console.error("DocumentPicker Error:", err);
+      const folder = await folderApi.create(newFolderName.trim());
+      setFolders((prev) => [
+        ...prev,
+        { id: folder.id, name: folder.name, docs: [] },
+      ]);
+      setNewFolderName("");
+      setModalVisible(false);
+    } catch (err: any) {
+      Alert.alert("Lỗi", "Không thể tạo folder: " + err.message);
     }
   };
 
-  const openDoc = async (uri: string) => {
-    await Linking.openURL(uri);
-  };
-
-  const confirmDelete = (uriToDelete: string) => {
+  const confirmDeleteFolder = (fid: string) => {
     Alert.alert(
-      "Xác nhận xóa",
-      "Bạn có chắc muốn xóa tài liệu này?",
+      "Delete folder",
+      "Do you want to delete this folder?",
       [
-        { text: "Hủy", style: "cancel" },
+        { text: "Cancel", style: "cancel" },
         {
-          text: "Xóa",
+          text: "Delete",
           style: "destructive",
-          onPress: () => {
-            setDocs((prev) => prev.filter((doc) => doc.uri !== uriToDelete));
-          },
+          onPress: () => setFolders((prev) => prev.filter((f) => f.id !== fid)),
         },
       ],
       { cancelable: false }
     );
   };
 
+  // Mở/đóng folder
+  const toggleFolder = (id: string) =>
+    setExpandedFolder((prev) => (prev === id ? null : id));
+
+  // Chọn file
+  const pickDoc = async () => {
+    if (!expandedFolder) {
+      Alert.alert("Lỗi", "Hãy mở một folder trước khi thêm file.");
+      return;
+    }
+    try {
+      const res: any = await DocumentPicker.getDocumentAsync({
+        type: [
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+          "application/msword", // .doc
+        ],
+        copyToCacheDirectory: true,
+      });
+
+      if (!res.canceled && res.assets && res.assets.length > 0) {
+        // Chuẩn bị file cho FormData
+        console.log(res);
+        const fileAsset = res.assets[0];
+        let fileToUpload: any;
+        if (Platform.OS === "web") {
+          // Nếu là web, dùng File hoặc Blob
+          fileToUpload =
+            fileAsset.file ||
+            new File([fileAsset], fileAsset.name, { type: fileAsset.mimeType });
+        } else {
+          // Nếu là mobile, dùng object { uri, name, type }
+          fileToUpload = {
+            uri: fileAsset.uri,
+            name: fileAsset.name,
+            type:
+              fileAsset.mimeType ||
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          };
+        }
+        // Gọi API upload
+        await folderApi.uploadFile(expandedFolder, fileToUpload, file.name);
+        // Thêm vào UI (có thể reload lại folder từ server nếu muốn)
+        setFolders((prev) =>
+          prev.map((f) =>
+            f.id === expandedFolder
+              ? {
+                  ...f,
+                  docs: [
+                    ...f.docs,
+                    { name: file.name, uri: file.uri, size: file.size },
+                  ],
+                }
+              : f
+          )
+        );
+        Alert.alert("Thành công", "Tải file lên thành công!");
+      }
+    } catch (err: any) {
+      console.error("Error picking document or uploading:", err);
+      Alert.alert("Lỗi", "Không thể upload file: " + err.message);
+    }
+  };
+
+  // Mở tài liệu
+  const openDoc = (uri: string) => Linking.openURL(uri);
+
+  // Xóa tài liệu
+  const confirmDeleteDoc = (fid: string, uri: string) =>
+    Alert.alert(
+      "Xác nhận xóa tài liệu",
+      "Bạn có chắc muốn xóa tài liệu này?",
+      [
+        { text: "Hủy", style: "cancel" },
+        {
+          text: "Xóa",
+          style: "destructive",
+          onPress: () =>
+            setFolders((prev) =>
+              prev.map((f) =>
+                f.id === fid
+                  ? { ...f, docs: f.docs.filter((d) => d.uri !== uri) }
+                  : f
+              )
+            ),
+        },
+      ],
+      { cancelable: false }
+    );
+
   return (
     <SafeAreaView style={styles.container}>
       <Header />
-      <FlatList
-        style={styles.list}
-        data={docs}
-        keyExtractor={(item) => item.uri}
-        contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <View style={styles.item}>
-            <TouchableOpacity
-              style={styles.fileInfo}
-              onPress={() => openDoc(item.uri)}
-            >
-              <Text style={styles.name} numberOfLines={1}>
-                {item.name}
-              </Text>
-              {item.size !== undefined && (
-                <Text style={styles.size}>
-                  {(item.size / 1024).toFixed(1)} KB
-                </Text>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => confirmDelete(item.uri)}>
-              <MaterialCommunityIcons
-                name="trash-can-outline"
-                size={24}
-                color="#C0C0C0"
-              />
-            </TouchableOpacity>
-          </View>
-        )}
-        ListEmptyComponent={<Text style={styles.empty}>Chưa có file nào.</Text>}
-      />
-      <View style={styles.buttonWrapper}>
-        <Button title="Chọn PDF/Word" onPress={pickDoc} color="#7AB2D3" />
-        <View style={styles.spacer} />
-        <BottomNavBar />
+
+      {/* Controls */}
+
+      {/* <View style={styles.controls}>
+        <TouchableOpacity
+          style={styles.addBtn}
+          onPress={() => setModalVisible(true)}
+        >
+          <MaterialCommunityIcons name="plus" size={20} color="#fff" />
+          <Text style={styles.addBtnText}>Add Folder</Text>
+        </TouchableOpacity>
+      </View> */}
+
+      {/* Folder List */}
+      <View style={styles.controls}>
+        <FlatList
+          data={folders}
+          keyExtractor={(f) => f.id}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>Press "Add Folder" to start.</Text>
+          }
+          renderItem={({ item }) => {
+            const isOpen = item.id === expandedFolder;
+            return (
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <TouchableOpacity
+                    onPress={() => toggleFolder(item.id)}
+                    style={styles.headerLeft}
+                  >
+                    <MaterialCommunityIcons
+                      name="folder-open-outline"
+                      size={28}
+                      color="#4F8EF7"
+                    />
+                    <Text style={styles.cardTitle}>{item.name}</Text>
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>{item.docs.length}</Text>
+                    </View>
+                  </TouchableOpacity>
+                  <View style={styles.headerRight}>
+                    <TouchableOpacity onPress={() => toggleFolder(item.id)}>
+                      <Ionicons
+                        name={isOpen ? "chevron-up" : "chevron-down"}
+                        size={20}
+                        color="#888"
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => confirmDeleteFolder(item.id)}
+                    >
+                      <MaterialCommunityIcons
+                        name="trash-can-outline"
+                        size={22}
+                        color="#E74C3C"
+                        style={{ marginLeft: 12 }}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {isOpen && (
+                  <View style={styles.cardBody}>
+                    <TouchableOpacity style={styles.innerBtn} onPress={pickDoc}>
+                      <MaterialCommunityIcons
+                        name="file-plus-outline"
+                        size={20}
+                        color="#4F8EF7"
+                      />
+                      <Text style={styles.innerBtnText}>Add Document</Text>
+                    </TouchableOpacity>
+
+                    {item.docs.length === 0 ? (
+                      <Text style={styles.emptyText}>
+                        There is no document.
+                      </Text>
+                    ) : (
+                      item.docs.map((doc) => (
+                        <View key={doc.uri} style={styles.docRow}>
+                          <TouchableOpacity
+                            style={styles.docInfo}
+                            onPress={() => openDoc(doc.uri)}
+                          >
+                            <Text style={styles.docName} numberOfLines={1}>
+                              {doc.name}
+                            </Text>
+                            {doc.size != null && (
+                              <Text style={styles.docSize}>
+                                {(doc.size / 1024).toFixed(1)} KB
+                              </Text>
+                            )}
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() => confirmDeleteDoc(item.id, doc.uri)}
+                          >
+                            <MaterialCommunityIcons
+                              name="trash-can-outline"
+                              size={22}
+                              color="#C0C0C0"
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      ))
+                    )}
+                  </View>
+                )}
+              </View>
+            );
+          }}
+        />
       </View>
+
+      <BottomNavBar onAddPress={() => setModalVisible(true)} />
+
+      {/* Modal tạo Folder */}
+      <Modal
+        transparent
+        visible={isModalVisible}
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>New Folder</Text>
+            <TextInput
+              placeholder="Name of folder"
+              value={newFolderName}
+              onChangeText={setNewFolderName}
+              style={styles.input}
+            />
+            <View style={styles.modalBtns}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.cancelBtn]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.saveBtn]}
+                onPress={handleAddFolder}
+              >
+                <Text style={styles.saveText}>Yes</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFF",
+  container: { flex: 1, backgroundColor: "#F5F7FA", alignItems: "center" },
+  controls: { flexDirection: "row", marginTop: 10, height: "85%" },
+  addBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#4F8EF7",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  list: {
-    flex: 1,
+  addBtnText: { color: "#fff", fontSize: 16, marginLeft: 6, fontWeight: "600" },
+  list: { paddingHorizontal: 16, paddingBottom: 80 },
+  card: {
+    marginBottom: 16,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  listContent: {
-    paddingTop: 20,
-    paddingHorizontal: 16,
-  },
-  item: {
+  cardHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: "#F5F5F5",
-    marginBottom: 12,
-  },
-  fileInfo: {
-    flex: 1,
-    marginRight: 8,
-  },
-  name: {
-    fontSize: 16,
-    color: "#333",
-  },
-  size: {
-    marginTop: 4,
-    fontSize: 14,
-    color: "#888",
-  },
-  empty: {
-    textAlign: "center",
-    marginTop: 40,
-    color: "#AAA",
-  },
-  buttonWrapper: {
     padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#EEE",
+  },
+  headerLeft: { flexDirection: "row", alignItems: "center", flex: 1 },
+  headerRight: { flexDirection: "row", alignItems: "center" },
+  cardTitle: { fontSize: 17, fontWeight: "600", marginLeft: 12 },
+  badge: {
+    backgroundColor: "#EAF5FA",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  badgeText: { fontSize: 13, color: "#4F8EF7" },
+  cardBody: { borderTopWidth: 1, borderTopColor: "#EEE", padding: 12 },
+  innerBtn: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
+  innerBtnText: {
+    marginLeft: 6,
+    fontSize: 15,
+    color: "#4F8EF7",
+    fontWeight: "500",
+  },
+  docRow: {
+    flexDirection: "row",
     alignItems: "center",
-    width: "100%",
+    justifyContent: "space-between",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
   },
-  spacer: {
-    height: 20, // cách 10px giữa nút và navbar
+  docInfo: { flex: 1, marginRight: 10 },
+  docName: { fontSize: 15, color: "#333" },
+  docSize: { fontSize: 13, color: "#888", marginTop: 2 },
+  emptyText: { textAlign: "center", color: "#AAA", padding: 20 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
   },
+  modalContent: {
+    width: "80%",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 20,
+  },
+  modalTitle: { fontSize: 18, fontWeight: "600", marginBottom: 16 },
+  input: {
+    borderWidth: 1,
+    borderColor: "#DDD",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 20,
+  },
+  modalBtns: { flexDirection: "row", justifyContent: "flex-end" },
+  modalBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 6,
+    marginLeft: 12,
+  },
+  cancelBtn: { backgroundColor: "#F0F0F0" },
+  saveBtn: { backgroundColor: "#4F8EF7" },
+  cancelText: { color: "#555", fontSize: 15 },
+  saveText: { color: "#fff", fontSize: 15 },
 });

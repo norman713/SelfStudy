@@ -26,12 +26,7 @@ export default function SearchScreen() {
       try {
         const response = await memberApi.getList(teamId, "", size); // cursor = "" for initial
         console.log("Fetched members:", response);
-        setMembers(
-          (response.members || []).map((member: any) => ({
-            ...member,
-            avatarUrl: "https://randomuser.me/api/portraits/lego/1.jpg", // ảnh cố định
-          }))
-        );
+        setMembers(response.members || []);
         setFilteredData(response.members || []); // Set initial filtered data
       } catch (error) {
         console.error("Error fetching member list:", error);

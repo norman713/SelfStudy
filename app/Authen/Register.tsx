@@ -107,7 +107,13 @@ export default function RegisterScreen() {
     }
 
     try {
-      await userApi.validate(request.username, request.email, request.password, request.dateOfBirth, request.gender,);
+      await userApi.validate(
+        request.username,
+        request.email,
+        request.password,
+        request.dateOfBirth,
+        request.gender
+      );
       setShowError(false);
       setMessage({ title: "", description: "" });
       router.replace({
@@ -176,15 +182,6 @@ export default function RegisterScreen() {
         </View>
 
         <CustomButton title="Register" onPress={handleRegister} />
-        <View style={styles.divideContainer}>
-          <View style={styles.divideLine}></View>
-          <Text style={styles.option}>Or</Text>
-          <View style={styles.divideLine}></View>
-        </View>
-        <Pressable style={styles.googleButton}>
-          <Image source={require("../../assets/images/google-icon.png")} />
-          <Text style={styles.googleText}>Login with Google</Text>
-        </Pressable>
       </View>
     </SafeAreaView>
   );

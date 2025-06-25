@@ -69,6 +69,7 @@ export default function TeamInfo() {
       try {
         const response = await teamApi.getTeamInfo(teamId);
         setTeamInfo(response);
+        console.log(response);
       } catch (error) {
         Alert.alert("Error", "Failed to load team information.");
       } finally {
@@ -90,12 +91,7 @@ export default function TeamInfo() {
       setIsLoading(true);
       try {
         const response = await memberApi.getList(teamId, "", size); // cursor = "" for initial
-        setMembers(
-          (response.members || []).map((member: any) => ({
-            ...member,
-            avatarUrl: "https://randomuser.me/api/portraits/lego/1.jpg", // ảnh cố định
-          }))
-        );
+        setMembers(response.members || []);
       } catch (error) {
         console.error("Error fetching member list:", error);
         Alert.alert("Error", "Failed to load members.");
@@ -338,12 +334,11 @@ export default function TeamInfo() {
         <View style={styles.avatarContainer}>
           <Image
             source={{
-              uri: "https://gratisography.com/wp-content/uploads/2025/01/gratisography-dog-vacation-800x525.jpg", // Your image URL
+              uri: "https://res.cloudinary.com/drvyagz4w/image/upload/v1750258950/111e8400-e29b-41d4-a716-446655440001.jpg",
             }}
             style={styles.avatar}
           />
 
-          {/* Only show camera icon if the role is CREATOR */}
           {role === "CREATOR" && (
             <TouchableOpacity style={styles.editIcon}>
               <Ionicons name="camera" size={24} color="#fff" />
@@ -453,8 +448,7 @@ export default function TeamInfo() {
               size={24}
               color="black"
             />
-            <Text>Show members ({teamInfo?.totalMembers || 0})</Text>{" "}
-            {/* Dynamically display total members */}
+            <Text>Show members ({teamInfo?.totalMembers || 0})</Text>
           </TouchableOpacity>
 
           {/* Members List */}
@@ -517,11 +511,13 @@ export default function TeamInfo() {
                           )}
 
                           {/* Remove Member Button */}
-                          <TouchableOpacity
-                            onPress={() => handleRemoveMember(item.userId)}
-                          >
-                            <Text>Remove</Text>
-                          </TouchableOpacity>
+                          {role !== "MEMBER" && (
+                            <TouchableOpacity
+                              onPress={() => handleRemoveMember(item.userId)}
+                            >
+                              <Text>Remove</Text>
+                            </TouchableOpacity>
+                          )}
                         </View>
                       )}
                     </View>

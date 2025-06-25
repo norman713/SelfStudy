@@ -14,7 +14,7 @@ import PasswordInput from "@/components/PasswordInput";
 import { Link, router } from "expo-router";
 import BackButton from "@/components/BackButton";
 import { Colors } from "@/constants/Colors";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { isValidEmail } from "@/util/validator";
 import userApi from "@/api/userApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -82,22 +82,6 @@ export default function LoginScreen() {
       "http://selfstudy.up.railway.app/oauth2/authorization/google"
     );
   };
-  useEffect(() => {
-    AsyncStorage.getItem("accessToken").then(async (token) => {
-      if (token) {
-        console.log("Token: ", token);
-        // If token exists, set it in the user context
-        const userInfo = await userApi.getUserInfo().catch((error) => {
-          console.error("Failed to fetch user info:", error);
-          AsyncStorage.removeItem("accessToken");
-          AsyncStorage.removeItem("refreshToken");
-          return null;
-        });
-        setUser(userInfo);
-        router.push("/Me/Plan");
-      }
-    });
-  }, [])
 
   return (
     <SafeAreaView style={styles.container}>

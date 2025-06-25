@@ -17,9 +17,12 @@ import useCustomFonts from "@/hooks/useCustomFonts";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import userApi from "@/api/userApi"; // Import the API call
+import { useUser } from "@/context/UserContext";
+import { Picker } from "@react-native-picker/picker";
 
 export default function Profile() {
   const fontsLoaded = useCustomFonts();
+  const { user } = useUser();
   const [userData, setUserData] = useState({
     username: "",
     dateOfBirth: "",
@@ -36,9 +39,7 @@ export default function Profile() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await userApi.getUserInfo(
-          "554c0f1d-b1f4-4466-8778-8caaff792b45"
-        );
+        const response = await userApi.getUserInfo();
         setUserData({
           username: response.username,
           dateOfBirth: response.dateOfBirth,
@@ -93,7 +94,7 @@ export default function Profile() {
         <View style={styles.avatarContainer}>
           <Image
             source={{
-              uri: userData.avatarUrl || "https://via.placeholder.com/110", // Placeholder image if avatarUrl is empty
+              uri: user?.avatarUrl || "https://via.placeholder.com/110", // Placeholder image if avatarUrl is empty
             }}
             style={styles.avatar}
           />
@@ -135,12 +136,16 @@ export default function Profile() {
           <View style={styles.inputWrapper}>
             <Text style={styles.label}>Gender</Text>
             <View style={styles.inputRow}>
-              <TextInput
-                style={styles.input}
-                value={newUserData.gender}
-                onChangeText={(text) => handleInputChange("gender", text)} // Update gender
-              />
-              <Feather name="chevron-down" size={20} color="#7AB2D3" />
+              <Picker
+                selectedValue={newUserData.gender}
+                style={styles.picker}
+                onValueChange={(value) => handleInputChange("gender", value)}
+              >
+                <Picker.Item label="Male" value="MALE" />
+                <Picker.Item label="Female" value="FEMALE" />
+                <Picker.Item label="Unspecified" value="UNSPECIFIED" />
+              </Picker>
+              {/* <Feather name="chevron-down" size={20} color="#7AB2D3" /> */}
             </View>
           </View>
 
@@ -188,7 +193,7 @@ const styles = StyleSheet.create({
   cameraIcon: {
     position: "absolute",
     bottom: 0,
-    right: "46%",
+    right: "35%",
     backgroundColor: "#7AB2D3",
     padding: 6,
     borderRadius: 20,
@@ -239,5 +244,11 @@ const styles = StyleSheet.create({
   buttonContainer: {
     marginTop: 40,
     paddingBottom: 20,
+  },
+  picker: {
+    flex: 1,
+    height: 50,
+    backgroundColor: "#F8F8F8",
+    width: "100%",
   },
 });

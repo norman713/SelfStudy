@@ -46,7 +46,7 @@ export default function ProfileCard({
           username: response.username,
           dateOfBirth: response.dateOfBirth,
           gender: response.gender,
-          avatarUrl: "https://randomuser.me/api/portraits/lego/1.jpg",
+          avatarUrl: response.avatarUrl,
         };
 
         setUserInfo(user);

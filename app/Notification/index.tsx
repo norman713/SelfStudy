@@ -5,6 +5,7 @@ import {
   Text,
   View,
   Pressable,
+  Alert,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import BottomNavBar from "@/components/navigation/ButtonNavBar";
@@ -36,12 +37,14 @@ interface Invitation {
 }
 
 const Noti: React.FC = () => {
-  const [selectedTab, setSelectedTab] = useState<"notification" | "invitation">("notification");
+  const [selectedTab, setSelectedTab] = useState<"notification" | "invitation">(
+    "notification"
+  );
   const [isAllChecked, setIsAllChecked] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [checkedItems, setCheckedItems] = useState<boolean[]>(
-      notifications.map(() => false)
+    notifications.map(() => false)
   );
   const [markedIds, setMarkedIds] = useState<Set<string>>(new Set());
   const [reloadTrigger, setReloadTrigger] = useState(0);
@@ -50,11 +53,10 @@ const Noti: React.FC = () => {
     const newCheckedState = !isAllChecked;
     setIsAllChecked(newCheckedState);
     setCheckedItems(notifications.map(() => newCheckedState));
-    
-    if(newCheckedState) {
-      setMarkedIds(new Set(notifications.map(n => n.id)));
-    }
-    else {
+
+    if (newCheckedState) {
+      setMarkedIds(new Set(notifications.map((n) => n.id)));
+    } else {
       setMarkedIds(new Set());
     }
   };
@@ -64,26 +66,25 @@ const Noti: React.FC = () => {
     newCheckedItems[index] = !newCheckedItems[index];
     setCheckedItems(newCheckedItems);
 
-    if(newCheckedItems[index]) {
+    if (newCheckedItems[index]) {
       setMarkedIds((prev) => new Set(prev).add(notifications[index].id));
-    }
-    else {
+    } else {
       const newSet = new Set(markedIds);
       newSet.delete(notifications[index].id);
       setMarkedIds(newSet);
     }
-    
+
     setIsAllChecked(newCheckedItems.every((item) => item));
   };
 
-  const handleTabChange = (tab : "notification" | "invitation") => {
-      setSelectedTab(tab);
+  const handleTabChange = (tab: "notification" | "invitation") => {
+    setSelectedTab(tab);
   };
 
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const response = await notificationApi.get(10, '');
+        const response = await notificationApi.get(10, "");
 
         const data: Notification[] = Array.isArray(response.notifications)
           ? response.notifications.map((item: any) => ({
@@ -97,7 +98,7 @@ const Noti: React.FC = () => {
             }))
           : [];
         setNotifications(data);
-       } catch (error) {
+      } catch (error) {
         console.error("Error fetching notifications", error);
       }
     };
@@ -108,7 +109,7 @@ const Noti: React.FC = () => {
   useEffect(() => {
     const fetchInvitations = async () => {
       try {
-        const response = await invitationApi.get(10, '');
+        const response = await invitationApi.get(10, "");
 
         const data: Invitation[] = Array.isArray(response.invitations)
           ? response.invitations.map((item: any) => ({
@@ -117,7 +118,7 @@ const Noti: React.FC = () => {
               inviterAvatarUrl: item.inviterAvatarUrl,
               teamId: item.teamId,
               teamName: item.teamName,
-              invitedAt: item.invitedAt
+              invitedAt: item.invitedAt,
             }))
           : [];
         setInvitations(data);
@@ -129,33 +130,50 @@ const Noti: React.FC = () => {
     fetchInvitations();
   }, [reloadTrigger]);
 
-  const handleDelete = async () => {
-    if(isAllChecked) {
-      await notificationApi.deleteAll();
-    }
-    else {
-      await notificationApi.deleteSelected(markedIds);
-    }
-
-    setReloadTrigger((prev) => prev + 1);
-  }
+  const handleDelete = () => {
+    Alert.alert(
+      "Confirm Delete",
+      "Do you want to delete this message?",
+      [
+        {
+          text: "No",
+          style: "cancel",
+        },
+        {
+          text: "Yes",
+          onPress: async () => {
+            try {
+              if (isAllChecked) {
+                await notificationApi.deleteAll();
+              } else {
+                await notificationApi.deleteSelected(markedIds);
+              }
+              setReloadTrigger((prev) => prev + 1);
+            } catch (error) {
+              console.error("Delete failed", error);
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
 
   const handleMark = async () => {
-    if(isAllChecked) {
+    if (isAllChecked) {
       await notificationApi.markAll();
-    }
-    else {
+    } else {
       await notificationApi.markSelected(markedIds);
     }
 
     setReloadTrigger((prev) => prev + 1);
-  }
+  };
 
   console.log(notifications);
 
   return (
     <SafeAreaView style={styles.container}>
-    {/* Icon Section */}
+      {/* Icon Section */}
       <View style={styles.iconContainer}>
         {selectedTab === "notification" ? (
           <>
@@ -203,7 +221,10 @@ const Noti: React.FC = () => {
       {/* Tabs */}
       <View style={styles.tabContainer}>
         <Pressable
-          style={[styles.tab, selectedTab === "notification" && styles.activeTab]}
+          style={[
+            styles.tab,
+            selectedTab === "notification" && styles.activeTab,
+          ]}
           onPress={() => handleTabChange("notification")}
         >
           <Text style={styles.tabText}>NOTIFICATION</Text>
@@ -219,54 +240,50 @@ const Noti: React.FC = () => {
 
       {/* Check All Section */}
       <View style={styles.markAllContainer}>
-        { selectedTab === "notification" &&
+        {selectedTab === "notification" && (
           <>
-            <Checkbox onToggle={handleCheckAllToggle} isChecked={isAllChecked} />
+            <Checkbox
+              onToggle={handleCheckAllToggle}
+              isChecked={isAllChecked}
+            />
             <Text style={styles.markAllText}>Check all</Text>
           </>
-        }
+        )}
       </View>
 
       {/* Content */}
       <View style={styles.content}>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          { selectedTab === "notification" ? 
-            (
-              <>
-              {
-                notifications.map((noti, index) =>(
-                  <Notification
-                    id = {noti.id}
-                    title= {noti.title}
-                    createdAt= {noti.createdAt}
-                    content= {noti.content}
-                    subject= {noti.subject}
-                    subjectId= {noti.subjectId}
-                    read = {noti.read}
-                    isChecked={checkedItems[index]}
-                    onToggle={() => handleItemToggle(index)}
-                  />
-                )) 
-              }
-              </>
-            ) :
-            (
-              <>
-                {
-                  invitations.map((inv) => (
-                    <Invite
-                      id= {inv.id}
-                      inviterName={inv.inviterName}
-                      inviterAvatarUrl={inv.inviterAvatarUrl}
-                      invitedAt={inv.invitedAt}
-                      teamName={inv.teamName}
-                      teamId={inv.teamId}
-                    />
-                  ))
-                }
-              </>
-            )  
-          }
+          {selectedTab === "notification" ? (
+            <>
+              {notifications.map((noti, index) => (
+                <Notification
+                  id={noti.id}
+                  title={noti.title}
+                  createdAt={noti.createdAt}
+                  content={noti.content}
+                  subject={noti.subject}
+                  subjectId={noti.subjectId}
+                  read={noti.read}
+                  isChecked={checkedItems[index]}
+                  onToggle={() => handleItemToggle(index)}
+                />
+              ))}
+            </>
+          ) : (
+            <>
+              {invitations.map((inv) => (
+                <Invite
+                  id={inv.id}
+                  inviterName={inv.inviterName}
+                  inviterAvatarUrl={inv.inviterAvatarUrl}
+                  invitedAt={inv.invitedAt}
+                  teamName={inv.teamName}
+                  teamId={inv.teamId}
+                />
+              ))}
+            </>
+          )}
         </ScrollView>
       </View>
 
@@ -279,7 +296,7 @@ const Noti: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { 
+  container: {
     flex: 1,
     backgroundColor: "white",
   },
@@ -305,10 +322,10 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
   },
-  content: { 
-    flex: 1, 
+  content: {
+    flex: 1,
     paddingHorizontal: 20,
-    paddingBottom: 70
+    paddingBottom: 70,
   },
   markAllContainer: {
     flexDirection: "row",
@@ -327,7 +344,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-   iconContainer: {
+  iconContainer: {
     flexDirection: "row",
     justifyContent: "flex-end",
     gap: 10,

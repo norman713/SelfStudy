@@ -9,21 +9,21 @@ import { router } from "expo-router";
 
 // Mock data per team
 const teamsData = {
-  Team1: {
-    role: "admin",
-    plans: [
-      { progress: 78.6, planName: "PLAN01", deadline: "2024-12-02 11:20:00" },
-      { progress: 30, planName: "PLAN02", deadline: "2024-12-03 10:00:00" },
-    ],
-  },
-  Team2: {
-    role: "admin",
-    plans: [
-      { progress: 90, planName: "PLAN03", deadline: "2024-12-04 14:00:00" },
-      { progress: 50, planName: "PLAN04", deadline: "2024-12-05 12:00:00" },
-    ],
-  },
-  Team3: {
+  // Team1: {
+  //   role: "admin",
+  //   plans: [
+  //     { progress: 78.6, planName: "PLAN01", deadline: "2024-12-02 11:20:00" },
+  //     { progress: 30, planName: "PLAN02", deadline: "2024-12-03 10:00:00" },
+  //   ],
+  // },
+  // Team2: {
+  //   role: "admin",
+  //   plans: [
+  //     { progress: 90, planName: "PLAN03", deadline: "2024-12-04 14:00:00" },
+  //     { progress: 50, planName: "PLAN04", deadline: "2024-12-05 12:00:00" },
+  //   ],
+  // },
+  Biology: {
     role: "member",
     plans: [
       { progress: 40, planName: "PLAN05", deadline: "2024-12-06 16:00:00" },

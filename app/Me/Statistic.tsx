@@ -104,6 +104,7 @@ export default function Statistic() {
           </View>
         </View>
       </ScrollView>
+      <BottomNavBar />
     </View>
   );
 }
@@ -112,6 +113,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
     paddingTop: 20,
+    alignItems: "center",
   },
   content: {
     flex: 1,

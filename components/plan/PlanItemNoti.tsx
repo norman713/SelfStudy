@@ -7,7 +7,7 @@ import Svg, {
   Stop,
   Text as SvgText,
 } from "react-native-svg";
-import Checkbox from "@/components/Checkbox";
+import Checkbox from "@/components/CheckBox";
 import { Colors } from "@/constants/Colors";
 
 interface PlanItemProps {
@@ -39,7 +39,7 @@ export default function PlanItemNoti({
     <View style={styles.container}>
       {/* Checkbox */}
       {showCheckbox && (
-        <Checkbox onToggle={onToggle || (() => { })} isChecked={isChecked} />
+        <Checkbox onToggle={onToggle || (() => {})} isChecked={isChecked} />
       )}
 
       {/* Progress Circle */}
@@ -72,8 +72,9 @@ export default function PlanItemNoti({
           strokeDasharray={`${circumference} ${circumference}`}
           strokeDashoffset={strokeDashoffset}
           strokeLinecap="round"
-          transform={`rotate(-90 ${radius + strokeWidth} ${radius + strokeWidth
-            })`}
+          transform={`rotate(-90 ${radius + strokeWidth} ${
+            radius + strokeWidth
+          })`}
         />
         <SvgText
           x={radius + strokeWidth}

@@ -35,22 +35,40 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({
   const onChangeSidePath = (oldValue: string, newValue: string) => {
     if (oldValue === newValue) return;
     setSideNavPath(newValue);
-
     const path = `/${bottomNavPath}/${newValue}`;
     router.push(path as Href);
   };
 
   const onChangeBottomPath = (oldValue: string, newValue: string) => {
-    if (oldValue === newValue) return;
+    // 1) nếu bấm lại vào Team khi đang ở Team, dùng logic cũ để đi vào /Team/sideNavPath
+    if (oldValue === newValue) {
+      if (newValue === "Team") {
+        const path = `/${newValue}/${sideNavPath}`;
+        router.push(path as Href);
+      }
+      return;
+    }
+
+    // 2) cập nhật state
     setBottomNavPath(newValue);
 
+    // 3) nếu chuyển từ khác sang Team, chỉ route thẳng tới /Team
+    if (newValue === "Team") {
+      router.push("/Team/Main");
+      return;
+    }
+
+    // 4) logic cũ cho các trường hợp khác
     const path =
       newValue === "Notification" || newValue === "MissedDeadline"
         ? `/${newValue}`
         : `/${newValue}/${sideNavPath}`;
 
-    if (path === "/Me/Management") router.push("/Me/Plan");
-    else router.push(path as Href);
+    if (path === "/Me/Management") {
+      router.push("/Me/Plan");
+    } else {
+      router.push(path as Href);
+    }
   };
 
   const value = {

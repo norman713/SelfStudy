@@ -11,7 +11,7 @@ import {
 
 interface TeamItemProps {
   title: string;
-  imageSource: { uri: string }; // Compatible with ImageSourcePropType
+  imageSource: string; // Compatible with ImageSourcePropType
   isAdmin?: boolean;
   style?: ViewStyle;
   onPress?: () => void; // Thêm onPress tùy chọn
@@ -40,7 +40,7 @@ export default function TeamItem({
         <View style={styles.container}>
           {/* Left: Avatar + Title */}
           <View style={styles.leftSection}>
-            <Image source={imageSource} style={styles.avatar} />
+            <Image source={{ uri: imageSource }} style={styles.avatar} />
             <Text style={styles.title}>{title}</Text>
           </View>
 
@@ -52,7 +52,7 @@ export default function TeamItem({
               activeOpacity={0.8}
             >
               <Image
-                source={require("../../assets/images/icon/Main_Component.png")}
+                source={imageSource}
                 style={styles.adminIcon}
                 resizeMode="contain"
               />

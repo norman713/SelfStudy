@@ -72,18 +72,6 @@ export default function Plan() {
     <SafeAreaView style={styles.safeArea}>
       <Header />
 
-      {/* Dropdown for groups */}
-      <View style={styles.dropdownContainer}>
-        <Picker
-          selectedValue={selectedGroup}
-          onValueChange={(itemValue) => setSelectedGroup(itemValue)}
-          style={styles.picker}
-        >
-          {groups.map((group) => (
-            <Picker.Item key={group.id} label={group.name} value={group.id} />
-          ))}
-        </Picker>
-      </View>
       <ScrollView contentContainerStyle={styles.scrollViewContainer}>
         <Text style={styles.title}>
           Hey, you have{" "}
@@ -138,6 +126,7 @@ const styles = StyleSheet.create({
     color: "black",
     textAlign: "center",
     marginBottom: 20,
+    marginTop: 20,
   },
   calendarContainer: {
     width: "90%",

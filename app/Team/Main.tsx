@@ -21,7 +21,6 @@ import CreateTeamPopup from "@/components/popup/CreateTeam";
 import JoinPopup from "@/components/popup/JoinTeam";
 import teamApi from "@/api/teamApi";
 import memberApi from "@/api/memberApi";
-import axios from "axios";
 
 const { width, height } = Dimensions.get("window");
 interface Team {
@@ -57,15 +56,16 @@ export default function TeamScreen() {
 
         const response = await teamApi.getAll(userId, cursor, size);
 
-        const data: Team[] = Array.isArray(response.data.teams)
-          ? response.data.teams.map((item: any) => ({
+        const data: Team[] = Array.isArray(response.teams)
+          ? response.teams.map((item: any) => ({
               id: item.id,
               name: item.name,
               isAdmin: item.managedByUser,
-              imageSource: require("../../assets/images/imageTeam.jpg"),
+              imageSource: item.avatarUrl,
             }))
           : [];
         setTeams(data);
+        console.log(response.teams);
         setFilteredTeams(data); // Đặt filtered teams
       } catch (error) {
         console.error("Error fetching teams", error);
@@ -92,24 +92,17 @@ export default function TeamScreen() {
     } catch (error) {
       console.error("Error joining team:", error);
 
-      let errorMessage = "There was an error joining the team.";
-
-      if (axios.isAxiosError(error)) {
-        errorMessage = error.response?.data?.message || errorMessage;
-      }
-
+      const errorMessage =
+        error.response?.message || "There was an error joining the team.";
       Alert.alert("Error", errorMessage);
     }
   };
 
-  // xử lý tạo team
   const handleSaveNewTeam = async (name: string, description: string) => {
     try {
       const response = await teamApi.create(userId, name, description);
       console.log("Team created successfully:", response);
-
-      // Cập nhật danh sách đội sau khi tạo mới
-      const newTeam = response; // Giả sử API trả về đội vừa tạo
+      const newTeam = response;
       setFilteredTeams([newTeam, ...filteredTeams]);
     } catch (error) {
       console.error("Error creating team:", error);
@@ -119,7 +112,7 @@ export default function TeamScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <Header />
+      <Header showMenu={false} />
       {/* Search Bar */}
       <View
         style={{
