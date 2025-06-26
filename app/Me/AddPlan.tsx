@@ -78,7 +78,9 @@ export default function PlanScreen() {
     }
 
     // Calculate remindTimes based on notifyBefore (format: "HH:mm:ss")
-    const [hours, minutes, seconds] = planInfo.notifyBefore.split(":").map(Number);
+    const [hours, minutes, seconds] = planInfo.notifyBefore
+      .split(":")
+      .map(Number);
     const endDate = new Date(planInfo.endDate);
     const remindTime = new Date(endDate);
     remindTime.setHours(remindTime.getHours() - hours);
@@ -91,21 +93,19 @@ export default function PlanScreen() {
       startAt: planInfo.startDate,
       endAt: planInfo.endDate,
       remindTimes: [remindTime.toISOString()],
-      tasks: tasks.map((task) => task.name)
-    }
+      tasks: tasks.map((task) => task.name),
+    };
 
     userApi.addPlan(newData).then(() => {
       console.log("Plan saved successfully");
       router.push("/Me/Plan");
-    })
+    });
     setLoading(true);
     // Mock save delay
     setTimeout(() => {
       setLoading(false);
-      // Log mock data to console
       console.log("Mock plan saved:", planInfo);
       console.log("Mock tasks saved:", tasks);
-      // Navigate back
       router.push("/Me/Plan");
     }, 1000);
   };

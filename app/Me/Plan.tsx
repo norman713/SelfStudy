@@ -91,7 +91,6 @@ export default function Plan() {
     return markedDates;
   };
   const handlePlanPress = (planId: string) => {
-    // Điều hướng đến trang PlanDetail và truyền planId qua URL
     router.push(`/Me/PlanDetail?planId=${planId}`);
   };
 

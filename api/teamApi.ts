@@ -48,6 +48,27 @@ deleteTeam(teamId: string, userId: string) {
   });
 },
 
+addPlan(planData: {
+  name: string,
+  description: string,
+  startAt: string,
+  endAt: string,
+  remindTimes: string[],
+  tasks: { name: string, assigneeId: string }[]  
+}) {
+  return axiosInstance.post("/plans/team", planData);
+},
+
+addTask(data: {
+  planId: string,
+  tasks: { name: string, assigneeId: string }[]
+}) {
+  return axiosInstance.post("/tasks/team", {
+    tasks: data.tasks    
+  });
+}
+
+
 
 
 }
