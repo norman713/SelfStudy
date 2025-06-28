@@ -16,7 +16,7 @@ import { Ionicons, Feather } from "@expo/vector-icons";
 import useCustomFonts from "@/hooks/useCustomFonts";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import userApi from "@/api/userApi"; // Import the API call
+import userApi from "@/api/userApi";
 import { useUser } from "@/context/UserContext";
 import { Picker } from "@react-native-picker/picker";
 

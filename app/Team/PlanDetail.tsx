@@ -9,6 +9,7 @@ import {
   Modal,
   Image,
   FlatList,
+  Alert,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import PlanInfo from "../../components/plan/PlanInfo";
@@ -21,6 +22,7 @@ import CustomButton from "@/components/CustomButton";
 import { formatDateToISOString } from "@/util/format";
 import teamApi from "@/api/teamApi";
 import { useTeamContext } from "@/context/TeamContext";
+import { useUser } from "@/context/UserContext";
 interface Reminder {
   id: string;
   remindAt: string;
@@ -32,6 +34,15 @@ interface Task {
   assigneeId?: string;
   assigneeAvatarUrl?: string;
 }
+interface UpdateTask {
+  id: string;
+  completed: boolean;
+}
+interface UpdateTasksAssignee {
+  id: string;
+  assigneeId: string;
+}
+
 interface Plan {
   id: string;
   isTeamPlan: boolean;
@@ -78,10 +89,15 @@ function computeNotifyBefore(endAt: Date, notifyDate: Date): string {
 export default function PlanScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const searchParams = useLocalSearchParams();
+  const { user } = useUser();
   const id = searchParams.planId as string;
   const { getId } = useTeamContext();
   const [planInfo, setPlanInfo] = useState<Plan>();
   const [newTask, setNewTask] = useState("");
+  const [updateTask, setUpdateTask] = useState<UpdateTask[]>([]);
+  const [updateTasksAssignee, setUpdateTasksAssignee] = useState<
+    UpdateTasksAssignee[]
+  >([]);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTaskName, setEditingTaskName] = useState("");
   const [deletedTaskIds, setDeletedTaskIds] = useState<string[]>([]);
@@ -103,11 +119,34 @@ export default function PlanScreen() {
 
   const assignMember = (member: Member) => {
     setTasks((prev) =>
-      prev.map((t) => (t.id === currentTaskId ? { ...t, assignee: member } : t))
+      prev.map((t) =>
+        t.id === currentTaskId
+          ? { ...t, assigneeId: member.id, assigneeAvatarUrl: member.avatar }
+          : t
+      )
     );
+    if (!currentTaskId) return;
+
+    setUpdateTasksAssignee((prev) => {
+      const exists = prev.some((t) => t.id === currentTaskId);
+      if (exists) {
+        return prev.map((t) =>
+          t.id === currentTaskId ? { ...t, assigneeId: member.id } : t
+        );
+      } else {
+        return [
+          ...prev,
+          {
+            id: currentTaskId,
+            assigneeId: member.id,
+          },
+        ];
+      }
+    });
     setModalVisible(false);
     setCurrentTaskId(null);
   };
+
   const filteredMembers = members.filter((m) =>
     m.name.toLowerCase().includes(searchText.toLowerCase())
   );
@@ -152,23 +191,47 @@ export default function PlanScreen() {
     setNewTask("");
   };
 
+  // task status
   const toggleTaskCompletion = (taskId: string, checked: boolean) => {
-    console.log("Toggle task completion:", taskId, checked)
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId
-          ? { ...t, completed: checked }
-          : t
-      )
-    );
-  }
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
 
+    if (task.assigneeId !== user?.id) {
+      Alert.alert("Can not edit", "You are not the assignee.", [
+        { text: "OK" },
+      ]);
+      return;
+    }
+    setUpdateTask((prev) => {
+      const exists = prev.some((t) => t.id === taskId);
+      if (exists) {
+        return prev.map((t) =>
+          t.id === taskId ? { ...t, completed: checked } : t
+        );
+      } else {
+        const targetTask = tasks.find((t) => t.id === taskId);
+        if (!targetTask || !targetTask.assigneeId) return prev;
+
+        return [
+          ...prev,
+          {
+            id: taskId,
+            completed: checked,
+            assigneeId: targetTask.assigneeId,
+          },
+        ];
+      }
+    });
+
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, completed: checked } : t))
+    );
+  };
 
   const handleDeleteTask = (taskId: string) => {
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
     setDeletedTaskIds((prev) => [...prev, taskId]);
-  }
-
+  };
 
   const startEditingTask = (taskId: string, name: string) => {
     setEditingTaskId(taskId);
@@ -197,31 +260,34 @@ export default function PlanScreen() {
     }
 
     Promise.all([
-      teamApi
-        .updatePlan(id, {
-          name: planInfo.name,
-          description: planInfo.description,
-          startAt: new Date(planInfo.startAt).toISOString(),
-          endAt: new Date(planInfo.endAt).toISOString(),
-        }),
-      teamApi.updateTasksStatus(id,
-        tasks.map((task) => ({
+      teamApi.updatePlan(id, {
+        name: planInfo.name,
+        description: planInfo.description,
+        startAt: new Date(planInfo.startAt).toISOString(),
+        endAt: new Date(planInfo.endAt).toISOString(),
+      }),
+      teamApi.updateTasksStatus(
+        id,
+        updateTask.map((task) => ({
           id: task.id,
-          isCompleted: task.completed
+          isCompleted: task.completed,
         }))
       ),
-      teamApi.deleteTasks(id, deletedTaskIds)
-    ]).finally(() => {
-      // Mock save: log to console
-      console.log("Saved plan:", planInfo);
-      console.log("Tasks:", tasks);
+      teamApi.deleteTasks(id, deletedTaskIds),
 
+      teamApi.updateTasksAssignee(
+        id,
+        updateTasksAssignee.map((task) => ({
+          id: task.id,
+          assigneeId: task.assigneeId,
+        }))
+      ),
+    ]).finally(() => {
       router.push({
         pathname: "/Team/Plan",
         params: { reloadId: Date.now().toString() },
       });
     });
-
   };
 
   return (
@@ -237,12 +303,12 @@ export default function PlanScreen() {
             notifyBefore={
               planInfo.reminders[0]?.remindAt
                 ? computeNotifyBefore(
-                  new Date(planInfo.endAt),
-                  new Date(planInfo.reminders[0]?.remindAt)
-                )
+                    new Date(planInfo.endAt),
+                    new Date(planInfo.reminders[0]?.remindAt)
+                  )
                 : "00:00:00"
             }
-            status={planInfo.completeAt ? "COMPLETED" : "IN_PROGRESS"}
+            status={planInfo.completeAt ? "COMPLETED" : "INCOMPLETE"}
             completeDate={planInfo.completeAt}
             handleChangeValue={handleChange}
           />

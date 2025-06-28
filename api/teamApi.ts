@@ -107,14 +107,26 @@ const teamApi = {
     tasks: { name: string, assigneeId: string }[]
   }) {
     return axiosInstance.post("/tasks/team", {
+      planId: data.planId,
       tasks: data.tasks
     });
   },
+
   updateTasksStatus(planId: string, tasks: { id: string, isCompleted: boolean }[]) {
     return axiosInstance.patch(`/tasks/status`, {
       planId: planId,
       tasks: tasks
     });
-  }
+
+  },
+    updateTasksAssignee(planId: string, tasks: { id: string, assigneeId: string }[]) {
+    console.log("du lieu dau vao:", planId, tasks)
+    return axiosInstance.patch(`/tasks/assignee`, {
+      planId: planId,
+      task: tasks
+    });
+
+  },
+
 }
 export default teamApi;

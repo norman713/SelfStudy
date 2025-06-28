@@ -26,7 +26,7 @@ interface Plan {
   progress: number;
   planName: string;
   deadline: string;
-  isAdmin: boolean;
+  isAssigned: boolean;
 }
 
 export default function Plan() {
@@ -52,14 +52,15 @@ export default function Plan() {
         name: string;
         endAt: string;
         progress: number;
+        assigned: boolean;
       }[];
       setPlans(
         plansData.map((plan) => ({
           id: plan.id,
-          progress: plan.progress * 100, // progress range 0->1, convert to 0->100
+          progress: plan.progress * 100,
           planName: plan.name,
           deadline: plan.endAt,
-          isAdmin: false,
+          isAssigned: plan.assigned,
         }))
       );
     });
@@ -145,7 +146,6 @@ const styles = StyleSheet.create({
   },
   scrollViewContainer: {
     flexGrow: 1,
-    justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,
     gap: 20,
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
   planListContainer: {
     width: "100%",
     justifyContent: "center",
-    alignItems: "center",
+    alignItems: "flex-start",
   },
   highlightText: {
     color: Colors.primary,

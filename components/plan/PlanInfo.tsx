@@ -34,7 +34,6 @@ export default function APlan({
   completeDate,
   handleChangeValue,
 }: APlanProps) {
-
   const time = notifyBefore.split(":");
   const [remindBefore, setRemindBefore] = useState({
     hours: Number(time.at(0)),
@@ -117,7 +116,14 @@ export default function APlan({
           {formatDateTime(completeDate ? completeDate : "")}
         </Text>
       ) : (
-        <Text style={styles.incompleteText}>INCOMPLETE</Text>
+        <Text
+          style={[
+            styles.incompleteText,
+            status === "COMPLETED" && { color: "#2ecc71" }, // xanh lá
+          ]}
+        >
+          {status}
+        </Text>
       )}
       {/* Description Field */}
       <View style={styles.fieldContainer}>
@@ -350,7 +356,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   incompleteText: {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: "bold",
     color: Colors.red,
     marginTop: 5,

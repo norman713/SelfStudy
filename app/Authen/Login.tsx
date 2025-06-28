@@ -14,7 +14,7 @@ import PasswordInput from "@/components/PasswordInput";
 import { Link, router } from "expo-router";
 import BackButton from "@/components/BackButton";
 import { Colors } from "@/constants/Colors";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { isValidEmail } from "@/util/validator";
 import userApi from "@/api/userApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -36,15 +36,6 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    const token = await AsyncStorage.getItem("accessToken");
-    if (token) {
-      console.log("Access Token:", token);
-      // If the user is already logged in, redirect to the plan page
-      const userInfo = await userApi.getUserInfo();
-      setUser(userInfo);
-      router.push("/Me/Plan");
-      return;
-    }
     if (loginRequest.email == "" || loginRequest.password == "") {
       setShowError(true);
       setMessage({
@@ -69,7 +60,6 @@ export default function LoginScreen() {
       );
       const { accessToken, refreshToken } = response;
       await AsyncStorage.setItem("accessToken", accessToken);
-      console.log("Access Token:", accessToken);
       await AsyncStorage.setItem("refreshToken", refreshToken);
       setShowError(false);
       setMessage({ title: "", description: "" });

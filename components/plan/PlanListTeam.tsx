@@ -8,7 +8,7 @@ interface Plan {
   progress: number;
   planName: string;
   deadline: string;
-  isAdmin: boolean;
+  isAssigned: boolean;
 }
 
 interface PlanListProps {
@@ -17,8 +17,10 @@ interface PlanListProps {
 }
 
 export default function PlanList({ onPlanPress, plans }: PlanListProps) {
-
-  console.log("Plans:", plans?.map(plan => plan.progress));
+  console.log(
+    "Plans:",
+    plans?.map((plan) => plan.progress)
+  );
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -36,7 +38,7 @@ export default function PlanList({ onPlanPress, plans }: PlanListProps) {
             progress={item.progress}
             deadline={item.deadline}
           />
-          {item.isAdmin && (
+          {item.isAssigned && (
             <MaterialCommunityIcons
               name="account-outline"
               size={25}
