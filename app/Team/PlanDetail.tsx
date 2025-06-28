@@ -84,6 +84,7 @@ export default function PlanScreen() {
   const [newTask, setNewTask] = useState("");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTaskName, setEditingTaskName] = useState("");
+  const [deletedTaskIds, setDeletedTaskIds] = useState<string[]>([]);
   const [showError, setShowError] = useState(false);
   const [message, setMessage] = useState({ title: "", description: "" });
 
@@ -163,8 +164,11 @@ export default function PlanScreen() {
   }
 
 
-  const handleDeleteTask = (taskId: string) =>
+  const handleDeleteTask = (taskId: string) => {
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    setDeletedTaskIds((prev) => [...prev, taskId]);
+  }
+
 
   const startEditingTask = (taskId: string, name: string) => {
     setEditingTaskId(taskId);
@@ -205,7 +209,8 @@ export default function PlanScreen() {
           id: task.id,
           isCompleted: task.completed
         }))
-      )
+      ),
+      teamApi.deleteTasks(id, deletedTaskIds)
     ]).finally(() => {
       // Mock save: log to console
       console.log("Saved plan:", planInfo);

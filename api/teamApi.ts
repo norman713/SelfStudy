@@ -77,6 +77,7 @@ const teamApi = {
   getPlan(planId: string) {
     return axiosInstance.get(`/plans/${planId}`);
   },
+
   addPlan(planData: {
     name: string,
     description: string,
@@ -96,7 +97,11 @@ const teamApi = {
   }) {
     return axiosInstance.patch(`/plans/${planId}`, planData);
   },
-
+  deleteTasks(planId: string, taskIds: string[]) {
+    return axiosInstance.delete(`/tasks`, {
+      data: { planId, taskIds }
+    });
+  },
   addTask(data: {
     planId: string,
     tasks: { name: string, assigneeId: string }[]

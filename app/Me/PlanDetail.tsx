@@ -75,6 +75,7 @@ function computeNotifyBefore(endAt: Date, notifyDate: Date): string {
 
 export default function PlanScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [deletedTaskIds, setDeletedTaskIds] = useState<string[]>([]);
   const [planInfo, setPlanInfo] = useState<Plan>();
   const [newTask, setNewTask] = useState("");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -116,10 +117,9 @@ export default function PlanScreen() {
   };
 
   const handleDeleteTask = (taskId: string) => {
-    userApi.deleteTasks(id, [taskId]).then(() => {
+    setTasks((prev) => prev?.filter((t) => t.id !== taskId));
+    setDeletedTaskIds((prev) => [...prev, taskId]);
 
-      setTasks((prev) => prev?.filter((t) => t.id !== taskId));
-    })
   };
 
   const startEditingTask = (taskId: string, name: string) => {
@@ -158,6 +158,7 @@ export default function PlanScreen() {
         startAt: new Date(planInfo.startAt).toISOString(),
         endAt: new Date(planInfo.endAt).toISOString(),
       }),
+      userApi.deleteTasks(id, deletedTaskIds),
     ])
       .finally(() => {
         // Mock save: log to console
