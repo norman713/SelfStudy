@@ -35,7 +35,6 @@ export default function LoginScreen() {
 
   const [loading, setLoading] = useState(false);
 
-
   const handleLogin = async () => {
     const token = await AsyncStorage.getItem("accessToken");
     if (token) {
@@ -64,8 +63,6 @@ export default function LoginScreen() {
     }
     setLoading(true);
     try {
-
-
       const response = await userApi.login(
         loginRequest.email,
         loginRequest.password

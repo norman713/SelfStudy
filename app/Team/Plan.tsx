@@ -29,7 +29,6 @@ interface Plan {
   isAdmin: boolean;
 }
 
-
 export default function Plan() {
   const { fontsLoaded } = useCustomFonts();
   const [markDates, setMarkDates] = useState<string[]>([]);
@@ -42,21 +41,26 @@ export default function Plan() {
   const [plans, setPlans] = useState<Plan[]>([]);
   if (!fontsLoaded) return null;
 
-
   const handlePlanPress = (planName: string) => {
     router.push(`/Team/PlanDetail?planName=${encodeURIComponent(planName)}`);
   };
 
   useEffect(() => {
     teamApi.listPlansByDate(selectedDate, getTeamId()).then((response) => {
-      const plansData = response as unknown as { id: string, name: string, endAt: string }[]
-      setPlans(plansData.map((plan) => ({
-        id: plan.id,
-        progress: 0,
-        planName: plan.name,
-        deadline: plan.endAt,
-        isAdmin: false,
-      })));
+      const plansData = response as unknown as {
+        id: string;
+        name: string;
+        endAt: string;
+      }[];
+      setPlans(
+        plansData.map((plan) => ({
+          id: plan.id,
+          progress: 0,
+          planName: plan.name,
+          deadline: plan.endAt,
+          isAdmin: false,
+        }))
+      );
     });
 
     teamApi.getPlansMarkInMonth(getTeamId(), month, year).then((response) => {
@@ -64,7 +68,7 @@ export default function Plan() {
 
       console.log("Marked Dates aaa:", markData);
       setMarkDates(markData);
-    })
+    });
   }, [selectedDate]);
 
   const getMarkedDates = () => {
@@ -96,9 +100,8 @@ export default function Plan() {
 
       <ScrollView contentContainerStyle={styles.scrollViewContainer}>
         <Text style={styles.title}>
-          Hey, you have{" "}
-          <Text style={styles.highlightText}>{plans.length}</Text> plans
-          today!
+          Hey, you have <Text style={styles.highlightText}>{plans.length}</Text>{" "}
+          plans today!
         </Text>
 
         <View style={styles.calendarContainer}>

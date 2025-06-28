@@ -68,12 +68,14 @@ export default function PlanScreen() {
 
   useEffect(() => {
     teamApi.searchMembers(getId(), searchText).then((response) => {
-      const res = response as unknown as { members: { userId: string, username: string, avatarUrl: string }[] };
+      const res = response as unknown as {
+        members: { userId: string; username: string; avatarUrl: string }[];
+      };
       const mapped = res.members.map((m) => ({
         id: m.userId,
         name: m.username,
         avatar: m.avatarUrl || "https://i.pravatar.cc/150?img=1",
-      }))
+      }));
       setMembers(mapped);
     });
   }, []);
@@ -146,20 +148,22 @@ export default function PlanScreen() {
         name: task.name,
         assigneeId: task.assignee ? task.assignee.id : undefined,
       })),
-    }
+    };
     console.log("New plan:", newPlan);
-    teamApi.addPlan(newPlan).catch((error) => {
-      setShowError(true);
-      setMessage({
-        title: "Error",
-        description: "Failed to save the plan. Please try again.",
+    teamApi
+      .addPlan(newPlan)
+      .catch((error) => {
+        setShowError(true);
+        setMessage({
+          title: "Error",
+          description: "Failed to save the plan. Please try again.",
+        });
+        console.error("Failed to save plan:", error);
+      })
+      .then(() => {
+        setLoading(true);
+        router.push("/Team/Plan");
       });
-      console.error("Failed to save plan:", error);
-    }).then(() => {
-      setLoading(true);
-      router.push("/Team/Plan");
-
-    })
   };
   // Cho modal chọn assignee
   const [modalVisible, setModalVisible] = useState(false);

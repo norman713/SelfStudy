@@ -17,7 +17,6 @@ interface PlanListProps {
 }
 
 export default function PlanList({ onPlanPress, plans }: PlanListProps) {
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -27,7 +26,7 @@ export default function PlanList({ onPlanPress, plans }: PlanListProps) {
       {plans?.map((item) => (
         <Pressable
           key={item.id}
-          onPress={() => onPlanPress(item.planName)}
+          onPress={() => onPlanPress(item.id)}
           style={styles.planItemContainer}
         >
           <PlanItem

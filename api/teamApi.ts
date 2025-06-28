@@ -10,9 +10,8 @@ const teamApi = {
   },
 
 
-  getTeamInfo(id: string) {
-    const url = "/teams/" + id;
-    return axiosInstance.get(url);
+ getTeamInfo(planId: string) {
+    return axiosInstance.get(`/plans/${planId}`);
   },
   create(userId: string, name: string, description: string) {
     const url = "/teams?/userId=" + userId;
@@ -26,8 +25,6 @@ const teamApi = {
   },
   updateTeam(teamId: string, userId: string, name?: string, description?: string) {
     const url = "/teams/" + teamId + "?userId=" + userId;
-
-    // Tạo body chỉ với những field không undefined
     const body: any = {};
     if (name !== undefined) body.name = name;
     if (description !== undefined) body.description = description;

@@ -73,8 +73,8 @@ export default function Header({ showMenu = true, onLogout = () => {} }) {
       router.push("/Me/Profile");
     } else if (option === "Log out") {
       onLogout();
-      
-      AsyncStorage.clear()
+
+      AsyncStorage.clear();
       router.push("/Authen/Login");
     }
   };

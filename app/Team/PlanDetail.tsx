@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -19,58 +19,82 @@ import Checkbox from "@/components/CheckBox";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CustomButton from "@/components/CustomButton";
 import { formatDateToISOString } from "@/util/format";
-
-type Member = { id: string; name: string; avatar: string };
-type Task = {
+import teamApi from "@/api/teamApi";
+import { useTeamContext } from "@/context/TeamContext";
+interface Reminder {
+  id: string;
+  remindAt: string;
+}
+interface Task {
   id: string;
   name: string;
-  status: string;
-  assignee: Member | null;
-};
-type PlanInfoType = {
+  status: "INCOMPLETE" | "COMPLETED";
+  assigneeId?: string;
+  assigneeAvatarUrl?: string;
+}
+interface Plan {
+  id: string;
+  isTeamPlan: boolean;
+  completeAt: string;
   name: string;
   description: string;
-  startDate: string;
-  endDate: string;
-  notifyBefore: string;
-  status: string;
-  completeDate: string | null;
-};
+  startAt: string;
+  endAt: string;
+  reminders: Reminder[];
+  tasks: Task[];
+}
 
-const mockPlanInfo: PlanInfoType = {
-  name: "Mock Plan",
-  description: "This is a mock plan description.",
-  startDate: formatDateToISOString(new Date()),
-  endDate: formatDateToISOString(new Date(Date.now() + 86400000)),
-  notifyBefore: "00:30:00",
-  status: "INCOMPLETE",
-  completeDate: null,
-};
+type Member = { id: string; name: string; avatar: string };
+/**
+ * Computes the time difference between endAt and notifyDate in "HH:mm:ss" format.
+ * @param endAt ISO string or Date object representing the end time.
+ * @param notifyDate ISO string or Date object representing the notify time.
+ * @returns {string} The difference as "HH:mm:ss".
+ */
+function computeNotifyBefore(endAt: Date, notifyDate: Date): string {
+  const end = endAt;
+  const notify = notifyDate;
+
+  console.log("End time:", end);
+  console.log("Notify time:", notify);
+
+  let diff = end.getTime() - notify.getTime();
+
+  if (diff < 0) diff = 0;
+
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+  const output = [
+    hours.toString().padStart(2, "0"),
+    minutes.toString().padStart(2, "0"),
+    seconds.toString().padStart(2, "0"),
+  ].join(":");
+  console.log("Time difference:", output);
+  return output;
+}
 
 const mockTasks: Task[] = [
-  { id: "1", name: "Mock Task 1", status: "INCOMPLETE", assignee: null },
-  { id: "2", name: "Mock Task 2", status: "COMPLETED", assignee: null },
+  { id: "1", name: "Mock Task 1", status: "INCOMPLETE", assigneeId: undefined },
+  { id: "2", name: "Mock Task 2", status: "COMPLETED", assigneeId: undefined },
 ];
 
 export default function PlanScreen() {
-  const searchParams = useLocalSearchParams();
-  const planId = searchParams.id as string;
-
-  const [planInfo, setPlanInfo] = useState<PlanInfoType>(mockPlanInfo);
   const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const searchParams = useLocalSearchParams();
+  const id = searchParams.planId as string;
+  const { getId } = useTeamContext();
+  const [planInfo, setPlanInfo] = useState<Plan>();
   const [newTask, setNewTask] = useState("");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTaskName, setEditingTaskName] = useState("");
   const [showError, setShowError] = useState(false);
   const [message, setMessage] = useState({ title: "", description: "" });
 
-  const [members] = useState<Member[]>([
-    { id: "u1", name: "Anna12", avatar: "https://i.pravatar.cc/150?img=1" },
-    { id: "u2", name: "Anna13", avatar: "https://i.pravatar.cc/150?img=2" },
-    { id: "u3", name: "Anna23", avatar: "https://i.pravatar.cc/150?img=3" },
-  ]);
+  const [members, setMembers] = useState<Member[]>([]);
 
-  // Cho modal chọn assignee
+  // Modal choose assignee
   const [modalVisible, setModalVisible] = useState(false);
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
@@ -88,13 +112,36 @@ export default function PlanScreen() {
     setModalVisible(false);
     setCurrentTaskId(null);
   };
-
-  // Lọc danh sách theo searchText
   const filteredMembers = members.filter((m) =>
     m.name.toLowerCase().includes(searchText.toLowerCase())
   );
 
-  // Task handlers
+  // fetch team info
+  useEffect(() => {
+    teamApi.getTeamInfo(id).then((data) => {
+      const plan = data as unknown as Plan;
+      setPlanInfo(plan);
+      console.log("Plan data:", plan);
+      setTasks(plan.tasks || []);
+    });
+  }, [id]);
+
+  //fetch member
+  useEffect(() => {
+    teamApi.searchMembers(getId(), searchText).then((response) => {
+      const res = response as unknown as {
+        members: { userId: string; username: string; avatarUrl: string }[];
+      };
+      const mapped = res.members.map((m) => ({
+        id: m.userId,
+        name: m.username,
+        avatar: m.avatarUrl || "https://i.pravatar.cc/150?img=1",
+      }));
+      setMembers(mapped);
+    });
+  }, []);
+
+  // task
   const handleAddTask = () => {
     if (!newTask.trim()) return;
     setTasks((prev) => [
@@ -136,33 +183,59 @@ export default function PlanScreen() {
 
   // PlanInfo handlers
   const handleChange = (field: string, value: string) => {
-    setPlanInfo((prev) => ({ ...prev, [field]: value }));
+    setPlanInfo((prev) => (prev ? { ...prev, [field]: value } : prev));
   };
 
   const handleSave = () => {
-    if (!planInfo.name) {
+    // Basic validation
+    if (!planInfo?.name) {
       setShowError(true);
       setMessage({ title: "Error", description: "Name is required." });
       return;
     }
-    console.log("Saved plan:", planInfo, "Tasks:", tasks);
-    router.push("/Me/Plan");
+
+    teamApi
+      .updatePlan(id, {
+        name: planInfo.name,
+        description: planInfo.description,
+        startAt: new Date(planInfo.startAt).toISOString(),
+        endAt: new Date(planInfo.endAt).toISOString(),
+      })
+      .finally(() => {
+        // Mock save: log to console
+        console.log("Saved plan:", planInfo);
+        console.log("Tasks:", tasks);
+
+        router.push({
+          pathname: "/Team/Plan",
+          params: { reloadId: Date.now().toString() },
+        });
+      });
   };
 
   return (
     <SafeAreaView style={styles.safeview}>
       <BackButton />
       <ScrollView style={styles.container}>
-        <PlanInfo
-          name={planInfo.name}
-          description={planInfo.description}
-          startDate={planInfo.startDate}
-          endDate={planInfo.endDate}
-          notifyBefore={planInfo.notifyBefore}
-          status={planInfo.status}
-          completeDate={planInfo.completeDate}
-          handleChangeValue={handleChange}
-        />
+        {planInfo && (
+          <PlanInfo
+            name={planInfo.name}
+            description={planInfo.description}
+            startDate={planInfo.startAt}
+            endDate={planInfo.endAt}
+            notifyBefore={
+              planInfo.reminders[0]?.remindAt
+                ? computeNotifyBefore(
+                    new Date(planInfo.endAt),
+                    new Date(planInfo.reminders[0]?.remindAt)
+                  )
+                : "00:00:00"
+            }
+            status={planInfo.completeAt ? "COMPLETED" : "IN_PROGRESS"}
+            completeDate={planInfo.completeAt}
+            handleChangeValue={handleChange}
+          />
+        )}
         <View style={styles.divideLine} />
 
         <View style={styles.tasksSectionWrapper}>
@@ -201,9 +274,9 @@ export default function PlanScreen() {
                 style={styles.assignButton}
                 onPress={() => openAssignModal(item.id)}
               >
-                {item.assignee ? (
+                {item.assigneeId ? (
                   <Image
-                    source={{ uri: item.assignee.avatar }}
+                    source={{ uri: item.assigneeAvatarUrl }}
                     style={styles.avatar}
                   />
                 ) : (
