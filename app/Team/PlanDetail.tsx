@@ -28,7 +28,7 @@ interface Reminder {
 interface Task {
   id: string;
   name: string;
-  status: "INCOMPLETE" | "COMPLETED";
+  completed: boolean;
   assigneeId?: string;
   assigneeAvatarUrl?: string;
 }
@@ -75,13 +75,8 @@ function computeNotifyBefore(endAt: Date, notifyDate: Date): string {
   return output;
 }
 
-const mockTasks: Task[] = [
-  { id: "1", name: "Mock Task 1", status: "INCOMPLETE", assigneeId: undefined },
-  { id: "2", name: "Mock Task 2", status: "COMPLETED", assigneeId: undefined },
-];
-
 export default function PlanScreen() {
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const searchParams = useLocalSearchParams();
   const id = searchParams.planId as string;
   const { getId } = useTeamContext();
@@ -149,21 +144,24 @@ export default function PlanScreen() {
       {
         id: Date.now().toString(),
         name: newTask,
-        status: "INCOMPLETE",
+        completed: false,
         assignee: null,
       },
     ]);
     setNewTask("");
   };
 
-  const toggleTaskCompletion = (taskId: string, checked: boolean) =>
+  const toggleTaskCompletion = (taskId: string, checked: boolean) => {
+    console.log("Toggle task completion:", taskId, checked)
     setTasks((prev) =>
       prev.map((t) =>
         t.id === taskId
-          ? { ...t, status: checked ? "COMPLETED" : "INCOMPLETE" }
+          ? { ...t, completed: checked }
           : t
       )
     );
+  }
+
 
   const handleDeleteTask = (taskId: string) =>
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
@@ -205,7 +203,7 @@ export default function PlanScreen() {
       teamApi.updateTasksStatus(id,
         tasks.map((task) => ({
           id: task.id,
-          isCompleted: task.status === "COMPLETED",
+          isCompleted: task.completed
         }))
       )
     ]).finally(() => {
@@ -251,7 +249,7 @@ export default function PlanScreen() {
           {tasks.map((item) => (
             <View key={item.id} style={styles.taskContainer}>
               <Checkbox
-                isChecked={item.status === "COMPLETED"}
+                isChecked={item.completed}
                 onToggle={(chk) => toggleTaskCompletion(item.id, chk)}
               />
               <View style={styles.taskContent}>
@@ -269,7 +267,7 @@ export default function PlanScreen() {
                     <Text
                       style={[
                         styles.taskText,
-                        item.status === "COMPLETED" && styles.taskTextCompleted,
+                        item.completed && styles.taskTextCompleted,
                       ]}
                     >
                       {item.name}

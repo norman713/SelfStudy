@@ -26,7 +26,7 @@ interface Reminder {
 interface Task {
   id: string;
   name: string;
-  status: "INCOMPLETE" | "COMPLETED";
+  completed: boolean
   assigneeId?: string;
   assigneeAvatarUrl?: string;
 }
@@ -109,7 +109,7 @@ export default function PlanScreen() {
     setTasks((prev) =>
       prev?.map((t) =>
         t.id === taskId
-          ? { ...t, status: isChecked ? "COMPLETED" : "INCOMPLETE" }
+          ? { ...t, completed: isChecked }
           : t
       )
     );
@@ -150,7 +150,7 @@ export default function PlanScreen() {
     Promise.all([
       userApi.updateTasksStatus(id, tasks.map((task) => ({
         id: task.id,
-        isCompleted: task.status === "COMPLETED",
+        isCompleted: task.completed,
       }))),
       userApi.updatePlan(id, {
         name: planInfo.name,
@@ -192,7 +192,7 @@ export default function PlanScreen() {
           {tasks && tasks.map((item) => (
             <View key={item.id} style={styles.taskContainer}>
               <Checkbox
-                isChecked={item.status === "COMPLETED"}
+                isChecked={item.completed}
                 onToggle={(checked) => toggleTaskCompletion(item.id, checked)}
               />
 
