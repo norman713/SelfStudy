@@ -129,10 +129,6 @@ export default function Sidebar({ onClose }: SidebarProps) {
           </Pressable>
 
         ))}
-        <Pressable style={styles.closeButton} onPress={onClose}>
-          <Ionicons name="close-circle-outline" size={24} color="white" />
-          <Text style={[styles.menuText]}>Closed</Text>
-        </Pressable>
       </View>
     </View>
   );
