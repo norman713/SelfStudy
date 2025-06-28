@@ -21,6 +21,7 @@ import CreateTeamPopup from "@/components/popup/CreateTeam";
 import JoinPopup from "@/components/popup/JoinTeam";
 import teamApi from "@/api/teamApi";
 import memberApi from "@/api/memberApi";
+import { useTeamContext } from "@/context/TeamContext";
 
 const { width, height } = Dimensions.get("window");
 interface Team {
@@ -48,6 +49,7 @@ export default function TeamScreen() {
   const [size, setSize] = useState<number>(10); // Số lượng team mỗi lần tải
   const [isLoading, setIsLoading] = useState<boolean>(false); // State loading
   const userId = "554c0f1d-b1f4-4466-8778-8caaff792b45"; // User ID
+  const { setId } = useTeamContext(); // Lấy setId từ context
 
   useEffect(() => {
     const fetchTeams = async () => {
@@ -74,8 +76,8 @@ export default function TeamScreen() {
       }
     };
 
-    fetchTeams(); // Gọi API khi component mount hoặc khi cursor/size thay đổi
-  }, [cursor, size]); // Dependencies: cursor và size
+    fetchTeams();
+  }, [cursor, size]);
 
   const getVisibleTeams = () => {
     if (activeFilter === "joined") return filteredTeams;
@@ -168,7 +170,7 @@ export default function TeamScreen() {
       <View style={styles.teamList}>
         <FlatList
           data={getVisibleTeams()}
-          keyExtractor={(team) => team.id.toString()} // đảm bảo key là string
+          keyExtractor={(team) => team.id.toString()}
           contentContainerStyle={{ paddingBottom: 40 }}
           showsVerticalScrollIndicator={false}
           renderItem={({ item: team }) => (
@@ -177,6 +179,7 @@ export default function TeamScreen() {
               imageSource={team.imageSource}
               isAdmin={team.isAdmin}
               onPress={() => {
+                setId(team.id); // Cập nhật teamId trong context
                 router.push(`/Team/${team.id}?userId=${userId}`);
               }}
             />

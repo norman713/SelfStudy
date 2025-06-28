@@ -49,6 +49,7 @@ deleteTeam(teamId: string, userId: string) {
 },
 
 addPlan(planData: {
+  teamId: string,
   name: string,
   description: string,
   startAt: string,

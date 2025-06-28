@@ -17,7 +17,7 @@ import {
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import Header from "@/components/Header";
-import * as ImagePicker from 'expo-image-picker';
+import * as ImagePicker from "expo-image-picker";
 import { useTeamContext } from "@/context/TeamContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { jwtDecode } from "jwt-decode";
@@ -37,26 +37,26 @@ interface TokenPayload {
 const CURRENT_USER_ID = "u1";
 
 export interface Message {
-  id: string | undefined
-  userId: string | undefined
-  username: string | undefined
-  avatarUrl: string | undefined
-  content: string
-  createdAt: string
-  imageUrl: string 
-  readBy: any[]
-  deleted: boolean
+  id: string | undefined;
+  userId: string | undefined;
+  username: string | undefined;
+  avatarUrl: string | undefined;
+  content: string;
+  createdAt: string;
+  imageUrl: string;
+  readBy: any[];
+  deleted: boolean;
 }
 
 export interface Team {
-  id: string
-  name: string
-  description: string
-  teamCode: string
-  createDate: string
-  creatorId: string
-  totalMembers: number
-  avatarUrl: string
+  id: string;
+  name: string;
+  description: string;
+  teamCode: string;
+  createDate: string;
+  creatorId: string;
+  totalMembers: number;
+  avatarUrl: string;
 }
 
 export default function ChatScreen() {
@@ -72,8 +72,8 @@ export default function ChatScreen() {
 
   useEffect(() => {
     const id = "111e8400-e29b-41d4-a716-446655440001";
-    setId(id);          // context update
-    setTeamId(id);  
+    setId(id);
+    setTeamId(id);
   }, []);
 
   useEffect(() => {
@@ -91,7 +91,7 @@ export default function ChatScreen() {
         const response = await teamApi.getTeamInfo(getId());
         setTeam(response);
       } catch (error) {
-          console.error('Error fetching team:', error);
+        console.error("Error fetching team:", error);
       }
     };
 
@@ -104,10 +104,10 @@ export default function ChatScreen() {
     const fetchAllMessage = async () => {
       try {
         console.log(getId());
-        const response = await chatApi.getChatMessages({teamId: getId()});
+        const response = await chatApi.getChatMessages({ teamId: getId() });
         setMessages(response.messages);
       } catch (error) {
-          console.error('Error fetching all messages:', error);
+        console.error("Error fetching all messages:", error);
       }
     };
 
@@ -115,89 +115,90 @@ export default function ChatScreen() {
   }, [teamId]);
 
   useEffect(() => {
-    if (!user?.id || !getId()) return; 
+    if (!user?.id || !getId()) return;
 
-    const url = `ws://103.211.201.112:8086/ws/chat?userId=${user.id}&teamId=${getId()}`;
+    const url = `ws://103.211.201.112:8086/ws/chat?userId=${
+      user.id
+    }&teamId=${getId()}`;
     console.log("Connecting to:", url);
 
     const socket = connectChatSocket(url, (message) => {
       try {
-      switch (message.type) {
-        case "new":
-          const newMsg: Message = {
-            ...message.data,
-            readBy: [],
-          };
-          setMessages((prev) => [newMsg, ...prev]);
-          isAppending.current = true;
-          break;
+        switch (message.type) {
+          case "new":
+            const newMsg: Message = {
+              ...message.data,
+              readBy: [],
+            };
+            setMessages((prev) => [newMsg, ...prev]);
+            isAppending.current = true;
+            break;
 
-        case "delete":
-          const oldMsg: any = {
-            ...message.data,
-          };
-          const deleteID = oldMsg.messageId;
+          case "delete":
+            const oldMsg: any = {
+              ...message.data,
+            };
+            const deleteID = oldMsg.messageId;
 
-          setMessages((prev: Message[]) =>
-            prev.map((msg) =>
-              msg.id === deleteID ? { ...msg, deleted: true} : msg
-            )
-          );
-          break;
+            setMessages((prev: Message[]) =>
+              prev.map((msg) =>
+                msg.id === deleteID ? { ...msg, deleted: true } : msg
+              )
+            );
+            break;
 
-        default:
-          console.log("Unhandled message type:", message.type);
-          break;
+          default:
+            console.log("Unhandled message type:", message.type);
+            break;
+        }
+      } catch (err) {
+        console.error("Failed to handle socket message:", err);
       }
-    } catch (err) {
-      console.error("Failed to handle socket message:", err);
-    }
-  });
+    });
 
     socketRef.current = socket;
 
     return () => {
       socket.close();
     };
-
   }, [user?.id, getId]);
 
   const loadMoreMessages = async () => {
     if (messages.length === 0) return;
 
-    const oldestMessage = messages[messages.length-1];
+    const oldestMessage = messages[messages.length - 1];
     const cursor = oldestMessage.createdAt.trim();
     const isoString = cursor.replace(" ", "T");
     try {
       const response = await chatApi.getChatMessages({
         teamId: getId(),
         cursor: isoString,
-        size: 10
+        size: 10,
       });
 
       if (response.messages.length > 0) {
         setMessages((prev) => [...prev, ...response.messages]);
       }
-    } catch (error : any) {
+    } catch (error: any) {
       console.error("Error loading older messages:", error.response.data);
     }
   };
 
   const handleChooseOption = () => {
     Alert.alert(
-      'Select Option',
-      'Choose an image source',
+      "Select Option",
+      "Choose an image source",
       [
         {
-          text: 'Cancel',
-          style: 'cancel',
+          text: "Cancel",
+          style: "cancel",
         },
         {
-          text: 'Take Photo',
+          text: "Take Photo",
           onPress: openCamera,
         },
         {
-          text: 'Choose from Gallery',
+          text: "Choose from Gallery",
           onPress: openGallery,
         },
       ],
@@ -207,20 +208,24 @@ export default function ChatScreen() {
 
   const handleDelete = (messageId: string) => {
     Alert.alert(
-      'Delete Message',
-      'Are you sure you want to delete this message?',
+      "Delete Message",
+      "Are you sure you want to delete this message?",
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => deleteMessage(messageId) }
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => deleteMessage(messageId),
+        },
       ]
     );
   };
 
   const deleteMessage = async (id: string) => {
-    try{
+    try {
       const response = await chatApi.deleteChatMessage(id);
-    }catch(error){
-      console.error('Error delete message:', error);
+    } catch (error) {
+      console.error("Error delete message:", error);
     }
   };
 
@@ -229,7 +234,7 @@ export default function ChatScreen() {
     if (!permission.granted) return;
 
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ["images"],
       allowsEditing: true,
       quality: 1,
     });
@@ -242,7 +247,7 @@ export default function ChatScreen() {
 
   const openGallery = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ["images"],
       allowsEditing: true,
       quality: 1,
     });
@@ -253,53 +258,57 @@ export default function ChatScreen() {
     }
   };
 
-  const sendMessage = async() => {
+  const sendMessage = async () => {
     const text = input.trim();
     if (!text) return;
 
-    try{
-      const response = await chatApi.sendChatMessage(text, teamId);      
+    try {
+      const response = await chatApi.sendChatMessage(text, teamId);
       setInput("");
-    }catch (error){
-      console.error('Error sending message:', error);
+    } catch (error) {
+      console.error("Error sending message:", error);
     }
   };
 
-  const sendImage = async (uri : string) => {
-    
-    try{
+  const sendImage = async (uri: string) => {
+    try {
       const formData = new FormData();
 
       formData.append("file", {
         uri,
         type: "image/jpeg",
         name: "chat-image.jpg",
-      } as any); 
+      } as any);
 
       const res = await chatApi.sendChatImage(formData, teamId);
     } catch (error: any) {
-        console.error("❌ Error sending image:");
-        console.error("Message:", error.message);
-        console.error("Is Axios Error:", error.isAxiosError);
-        if (error.response) {
-          console.error("🔻 Server responded with error:", error.response.status);
-          console.error("Response data:", error.response.data);
-        } else if (error.request) {
-          console.error("🔻 No response received. Request details:", error.request);
-        } else {
-          console.error("🔻 Error setting up request:", error);
-        }
+      console.error("❌ Error sending image:");
+      console.error("Message:", error.message);
+      console.error("Is Axios Error:", error.isAxiosError);
+      if (error.response) {
+        console.error("🔻 Server responded with error:", error.response.status);
+        console.error("Response data:", error.response.data);
+      } else if (error.request) {
+        console.error(
+          "🔻 No response received. Request details:",
+          error.request
+        );
+      } else {
+        console.error("🔻 Error setting up request:", error);
+      }
     }
-  }
+  };
 
   const renderItem = ({ item }: any) => {
     const isMe = item.userId == user?.id;
-    
+
     return (
       <View
         style={[styles.messageRow, isMe ? styles.rowRight : styles.rowLeft]}
       >
-        {!isMe && <Image source={{uri : item.avatarUrl}} style={styles.avatar} />}
+        {!isMe && (
+          <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
+        )}
         <Pressable
           onLongPress={isMe ? () => handleDelete(item.id) : () => {}}
           style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleOther]}
@@ -320,7 +329,9 @@ export default function ChatScreen() {
           )}
           <Text style={styles.time}>{item.createdAt}</Text>
         </Pressable>
-        {isMe && <Image source={{uri : user?.avatarUrl}} style={styles.avatar} />}
+        {isMe && (
+          <Image source={{ uri: user?.avatarUrl }} style={styles.avatar} />
+        )}
       </View>
     );
   };
@@ -363,7 +374,12 @@ export default function ChatScreen() {
       >
         <View style={styles.inputRow}>
           <TouchableOpacity style={styles.attachBtn}>
-            <Ionicons onPress={handleChooseOption} name="image-outline" size={24} color="#007AFF" />
+            <Ionicons
+              onPress={handleChooseOption}
+              name="image-outline"
+              size={24}
+              color="#007AFF"
+            />
           </TouchableOpacity>
           <TextInput
             style={styles.input}
@@ -435,7 +451,7 @@ const styles = StyleSheet.create({
 
   name: { fontSize: 12, fontWeight: "600", marginBottom: 4, color: "#1E282D" },
   text: { fontSize: 14, color: "#1E282D" },
-  deleteText: {fontSize: 14, color: "#535353", fontStyle: "italic"},
+  deleteText: { fontSize: 14, color: "#535353", fontStyle: "italic" },
   time: { fontSize: 10, color: "#535353", alignSelf: "flex-end", marginTop: 6 },
 
   inputRow: {
@@ -457,6 +473,6 @@ const styles = StyleSheet.create({
   chatImage: {
     width: 200,
     height: 200,
-    objectFit: "contain"
-  }
+    objectFit: "contain",
+  },
 });

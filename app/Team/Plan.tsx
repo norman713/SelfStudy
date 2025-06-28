@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Calendar } from "react-native-calendars";
 import { Text, StyleSheet, View, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,6 +9,7 @@ import { router, useNavigation } from "expo-router";
 import PlanList from "@/components/plan/PlanListTeam";
 import { Colors } from "@/constants/Colors";
 import { Picker } from "@react-native-picker/picker";
+import { useTeamContext } from "@/context/TeamContext";
 
 // helper lấy ngày hôm nay dưới dạng "YYYY-MM-DD"
 const getTodayString = () => new Date().toISOString().split("T")[0];
@@ -36,10 +37,17 @@ export default function Plan() {
   const { fontsLoaded } = useCustomFonts();
   const [selectedDate, setSelectedDate] = useState<string>(getTodayString());
   const navigation = useNavigation();
+  const { setId, getId } = useTeamContext();
+  const [teamId, setTeamId] = useState<string | null>(null);
 
   const [groups] = useState(mockGroups);
   const [selectedGroup, setSelectedGroup] = useState(groups[0].id);
 
+  // Lấy teamId từ context
+  useEffect(() => {
+    const id = getId();
+    setTeamId(id);
+  }, [getId()]);
   if (!fontsLoaded) return null;
 
   const handlePlanPress = (planName: string) => {
@@ -49,7 +57,6 @@ export default function Plan() {
   // Lọc ra plans của ngày đang chọn
   const plansForDate = mockPlans.filter((p) => p.date === selectedDate);
 
-  // Build markedDates từ mockPlans
   const markedDates = useMemo(() => {
     const marks: Record<string, any> = {};
     // đánh dấu từng ngày có ít nhất 1 plan
@@ -58,7 +65,6 @@ export default function Plan() {
         marks[date] = { marked: true, dotColor: Colors.red };
       }
     });
-    // overwrite ngày được chọn thành selected
     marks[selectedDate] = {
       ...(marks[selectedDate] || {}),
       selected: true,
@@ -73,12 +79,12 @@ export default function Plan() {
       <Header />
 
       <ScrollView contentContainerStyle={styles.scrollViewContainer}>
+        <Text>Team ID: {teamId}</Text>
         <Text style={styles.title}>
           Hey, you have{" "}
           <Text style={styles.highlightText}>{plansForDate.length}</Text> plans
           today!
         </Text>
-
         <View style={styles.calendarContainer}>
           <Calendar
             current={selectedDate}
@@ -94,7 +100,6 @@ export default function Plan() {
             }}
           />
         </View>
-
         <View style={styles.planListContainer}>
           <PlanList plans={plansForDate} onPlanPress={handlePlanPress} />
         </View>
