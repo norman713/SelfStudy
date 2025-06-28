@@ -94,6 +94,10 @@ export default function PlanScreen() {
   const { getId } = useTeamContext();
   const [planInfo, setPlanInfo] = useState<Plan>();
   const [newTask, setNewTask] = useState("");
+  const [newTasksToAdd, setNewTasksToAdd] = useState<
+    { name: string; assigneeId: string }[]
+  >([]);
+
   const [updateTask, setUpdateTask] = useState<UpdateTask[]>([]);
   const [updateTasksAssignee, setUpdateTasksAssignee] = useState<
     UpdateTasksAssignee[]
@@ -179,15 +183,28 @@ export default function PlanScreen() {
   // task
   const handleAddTask = () => {
     if (!newTask.trim()) return;
-    setTasks((prev) => [
+
+    // Mặc định người tạo là assignee nếu chưa chọn ai
+    const defaultAssigneeId = user?.id || "";
+
+    const tempTask = {
+      id: `temp-${Date.now()}`,
+      name: newTask,
+      completed: false,
+      assigneeId: defaultAssigneeId,
+      assigneeAvatarUrl: user?.avatarUrl,
+    };
+
+    setTasks((prev) => [...prev, tempTask]);
+
+    setNewTasksToAdd((prev) => [
       ...prev,
       {
-        id: Date.now().toString(),
         name: newTask,
-        completed: false,
-        assignee: null,
+        assigneeId: defaultAssigneeId,
       },
     ]);
+
     setNewTask("");
   };
 
@@ -282,6 +299,12 @@ export default function PlanScreen() {
           assigneeId: task.assigneeId,
         }))
       ),
+      newTasksToAdd.length > 0
+        ? teamApi.addTask({
+            planId: id,
+            tasks: newTasksToAdd,
+          })
+        : Promise.resolve(), // nếu không có task mới thì skip
     ]).finally(() => {
       router.push({
         pathname: "/Team/Plan",
