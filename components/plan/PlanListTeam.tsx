@@ -12,11 +12,13 @@ interface Plan {
 }
 
 interface PlanListProps {
-  onPlanPress: (planName: string) => void;
+  onPlanPress: (planId: string) => void;
   plans?: Plan[];
 }
 
 export default function PlanList({ onPlanPress, plans }: PlanListProps) {
+
+  console.log("Plans:", plans?.map(plan => plan.progress));
   return (
     <View style={styles.container}>
       <View style={styles.header}>

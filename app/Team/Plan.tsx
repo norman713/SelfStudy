@@ -41,8 +41,8 @@ export default function Plan() {
   const [plans, setPlans] = useState<Plan[]>([]);
   if (!fontsLoaded) return null;
 
-  const handlePlanPress = (planName: string) => {
-    router.push(`/Team/PlanDetail?planName=${encodeURIComponent(planName)}`);
+  const handlePlanPress = (planId: string) => {
+    router.push(`/Team/PlanDetail?planId=${encodeURIComponent(planId)}`);
   };
 
   useEffect(() => {
@@ -51,11 +51,12 @@ export default function Plan() {
         id: string;
         name: string;
         endAt: string;
+        progress: number;
       }[];
       setPlans(
         plansData.map((plan) => ({
           id: plan.id,
-          progress: 0,
+          progress: plan.progress * 100, // progress range 0->1, convert to 0->100
           planName: plan.name,
           deadline: plan.endAt,
           isAdmin: false,

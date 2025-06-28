@@ -10,8 +10,8 @@ const teamApi = {
   },
 
 
- getTeamInfo(planId: string) {
-    return axiosInstance.get(`/plans/${planId}`);
+  getTeamInfo(teamId: string) {
+    return axiosInstance.get(`/teams/${teamId}`);
   },
   create(userId: string, name: string, description: string) {
     const url = "/teams?/userId=" + userId;
@@ -74,6 +74,9 @@ const teamApi = {
     });
   },
 
+  getPlan(planId: string) {
+    return axiosInstance.get(`/plans/${planId}`);
+  },
   addPlan(planData: {
     name: string,
     description: string,
@@ -100,6 +103,12 @@ const teamApi = {
   }) {
     return axiosInstance.post("/tasks/team", {
       tasks: data.tasks
+    });
+  },
+  updateTasksStatus(planId: string, tasks: { id: string, isCompleted: boolean }[]) {
+    return axiosInstance.patch(`/tasks/status`, {
+      planId: planId,
+      tasks: tasks
     });
   }
 }

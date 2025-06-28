@@ -118,13 +118,13 @@ export default function PlanScreen() {
 
   // fetch team info
   useEffect(() => {
-    teamApi.getTeamInfo(id).then((data) => {
+    teamApi.getPlan(id).then((data) => {
       const plan = data as unknown as Plan;
       setPlanInfo(plan);
       console.log("Plan data:", plan);
       setTasks(plan.tasks || []);
     });
-  }, [id]);
+  }, []);
 
   //fetch member
   useEffect(() => {
@@ -194,23 +194,31 @@ export default function PlanScreen() {
       return;
     }
 
-    teamApi
-      .updatePlan(id, {
-        name: planInfo.name,
-        description: planInfo.description,
-        startAt: new Date(planInfo.startAt).toISOString(),
-        endAt: new Date(planInfo.endAt).toISOString(),
-      })
-      .finally(() => {
-        // Mock save: log to console
-        console.log("Saved plan:", planInfo);
-        console.log("Tasks:", tasks);
+    Promise.all([
+      teamApi
+        .updatePlan(id, {
+          name: planInfo.name,
+          description: planInfo.description,
+          startAt: new Date(planInfo.startAt).toISOString(),
+          endAt: new Date(planInfo.endAt).toISOString(),
+        }),
+      teamApi.updateTasksStatus(id,
+        tasks.map((task) => ({
+          id: task.id,
+          isCompleted: task.status === "COMPLETED",
+        }))
+      )
+    ]).finally(() => {
+      // Mock save: log to console
+      console.log("Saved plan:", planInfo);
+      console.log("Tasks:", tasks);
 
-        router.push({
-          pathname: "/Team/Plan",
-          params: { reloadId: Date.now().toString() },
-        });
+      router.push({
+        pathname: "/Team/Plan",
+        params: { reloadId: Date.now().toString() },
       });
+    });
+
   };
 
   return (
@@ -226,9 +234,9 @@ export default function PlanScreen() {
             notifyBefore={
               planInfo.reminders[0]?.remindAt
                 ? computeNotifyBefore(
-                    new Date(planInfo.endAt),
-                    new Date(planInfo.reminders[0]?.remindAt)
-                  )
+                  new Date(planInfo.endAt),
+                  new Date(planInfo.reminders[0]?.remindAt)
+                )
                 : "00:00:00"
             }
             status={planInfo.completeAt ? "COMPLETED" : "IN_PROGRESS"}
