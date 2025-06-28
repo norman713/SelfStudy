@@ -41,6 +41,7 @@ export default function TeamInfo() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { role, setRole } = useTeamContext();
   const [members, setMembers] = useState<Member[]>([]);
+  const { setId: setTeamID } = useTeamContext()
 
   //get user info in this team
   useEffect(() => {
@@ -64,20 +65,18 @@ export default function TeamInfo() {
 
   //get team info
   useEffect(() => {
-    const fetchTeamInfo = async () => {
-      setIsLoading(true);
-      try {
-        const response = await teamApi.getTeamInfo(teamId);
-        setTeamInfo(response);
-        console.log(response);
-      } catch (error) {
-        Alert.alert("Error", "Failed to load team information.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    setIsLoading(true);
+    teamApi.getTeamInfo(teamId).then((res) => {
+      const team = res as unknown as { id: string; name: string; description: string; teamCode: string; totalMembers: number };
 
-    fetchTeamInfo();
+      setTeamInfo(team);
+
+      setTeamID(team.id); // Set the team ID in the context
+    }).catch((error) => {
+      Alert.alert("Error", "Failed to load team information.");
+    }).finally(() => {
+      setIsLoading(false);
+    });
   }, [teamId]);
 
   useEffect(() => {
@@ -305,7 +304,7 @@ export default function TeamInfo() {
 
       setIsLoading(true);
       try {
-        const response = await userApi.getUserInfo(userId);
+        const response = await userApi.getUserInfo();
         setUserInfo(response);
       } catch (error) {
         console.error("Error fetching user info:", error);

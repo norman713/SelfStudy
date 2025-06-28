@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -19,6 +19,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Error from "@/components/Message/Error";
 import { hasDuplicateStrings } from "@/util/validator";
 import Checkbox from "@/components/CheckBox";
+import teamApi from "@/api/teamApi";
+import { useTeamContext } from "@/context/TeamContext";
 
 type Member = { id: string; name: string; avatar: string };
 type Task = {
@@ -47,11 +49,8 @@ export default function PlanScreen() {
   const [message, setMessage] = useState({ title: "", description: "" });
   const [loading, setLoading] = useState(false);
 
-  const [members] = useState<Member[]>([
-    { id: "u1", name: "Anna12", avatar: "https://i.pravatar.cc/150?img=1" },
-    { id: "u2", name: "Anna13", avatar: "https://i.pravatar.cc/150?img=2" },
-    { id: "u3", name: "Anna23", avatar: "https://i.pravatar.cc/150?img=3" },
-  ]);
+  const { getId } = useTeamContext();
+  const [members, setMembers] = useState<Member[]>([]);
 
   const handleAddTask = () => {
     if (!newTask.trim()) return;
@@ -66,6 +65,18 @@ export default function PlanScreen() {
     ]);
     setNewTask("");
   };
+
+  useEffect(() => {
+    teamApi.searchMembers(getId(), searchText).then((response) => {
+      const res = response as unknown as { members: { userId: string, username: string, avatarUrl: string }[] };
+      const mapped = res.members.map((m) => ({
+        id: m.userId,
+        name: m.username,
+        avatar: m.avatarUrl || "https://i.pravatar.cc/150?img=1",
+      }))
+      setMembers(mapped);
+    });
+  }, []);
 
   const handleDeleteTask = (taskId: string) =>
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
@@ -115,16 +126,40 @@ export default function PlanScreen() {
       return;
     }
 
-    setLoading(true);
-    // Mock save delay
-    setTimeout(() => {
-      setLoading(false);
-      // Log mock data to console
-      console.log("Mock plan saved:", planInfo);
-      console.log("Mock tasks saved:", tasks);
-      // Navigate back
+    // Calculate remindTimes based on notifyBefore (format: "HH:mm:ss")
+    const [hours, minutes, seconds] = planInfo.notifyBefore
+      .split(":")
+      .map(Number);
+    const endDate = new Date(planInfo.endDate);
+    const remindTime = new Date(endDate);
+    remindTime.setHours(remindTime.getHours() - hours);
+    remindTime.setMinutes(remindTime.getMinutes() - minutes);
+    remindTime.setSeconds(remindTime.getSeconds() - seconds);
+    const newPlan = {
+      name: planInfo.name,
+      description: planInfo.description,
+      startAt: planInfo.startDate,
+      endAt: planInfo.endDate,
+      teamId: getId(),
+      remindTimes: [remindTime.toISOString()],
+      tasks: tasks.map((task) => ({
+        name: task.name,
+        assigneeId: task.assignee ? task.assignee.id : undefined,
+      })),
+    }
+    console.log("New plan:", newPlan);
+    teamApi.addPlan(newPlan).catch((error) => {
+      setShowError(true);
+      setMessage({
+        title: "Error",
+        description: "Failed to save the plan. Please try again.",
+      });
+      console.error("Failed to save plan:", error);
+    }).then(() => {
+      setLoading(true);
       router.push("/Team/Plan");
-    }, 1000);
+
+    })
   };
   // Cho modal chọn assignee
   const [modalVisible, setModalVisible] = useState(false);

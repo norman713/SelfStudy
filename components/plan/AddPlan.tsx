@@ -21,7 +21,11 @@ export default function AddPlan({ setPlanInfo }: AddPlanProps) {
   initStartDate.setSeconds(0);
   initStartDate.setHours(0);
   const [startDate, setStartDate] = useState(initStartDate);
-  const [endDate, setEndDate] = useState(new Date());
+  const initEndDate = new Date();
+  initEndDate.setSeconds(0);
+  initEndDate.setHours(23);
+  initEndDate.setDate(initEndDate.getDate() + 1);
+  const [endDate, setEndDate] = useState(initEndDate);
   const [remindBefore, setRemindBefore] = useState({
     hours: 0,
     minutes: 0,
@@ -146,7 +150,7 @@ export default function AddPlan({ setPlanInfo }: AddPlanProps) {
           >
             <TextInput
               style={styles.input}
-              value={startDate.toLocaleDateString("en-US", {
+              value={startDate?.toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "2-digit",
                 day: "2-digit",

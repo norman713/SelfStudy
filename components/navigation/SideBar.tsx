@@ -16,89 +16,89 @@ export default function Sidebar({ onClose }: SidebarProps) {
   const menuItems =
     bottomNavPath === "Team"
       ? [
-          {
-            id: "Main",
-            label: "Main",
-            icon: (
-              <MaterialCommunityIcons
-                name="clipboard-list-outline"
-                size={24}
-                color="#1E282D"
-              />
-            ),
-          },
-          {
-            id: "Plan",
-            label: "Plan",
-            icon: (
-              <MaterialCommunityIcons name="target" size={24} color="#1E282D" />
-            ),
-          },
-          {
-            id: "Document",
-            label: "Document",
-            icon: (
-              <MaterialCommunityIcons
-                name="file-document-outline"
-                size={24}
-                color="#1E282D"
-              />
-            ),
-          },
-          {
-            id: "Chat",
-            label: "Chat",
-            icon: (
-              <MaterialCommunityIcons
-                name="chat-outline"
-                size={24}
-                color="#1E282D"
-              />
-            ),
-          },
-        ]
+        {
+          id: "Main",
+          label: "Main",
+          icon: (
+            <MaterialCommunityIcons
+              name="clipboard-list-outline"
+              size={24}
+              color="#1E282D"
+            />
+          ),
+        },
+        {
+          id: "Plan",
+          label: "Plan",
+          icon: (
+            <MaterialCommunityIcons name="target" size={24} color="#1E282D" />
+          ),
+        },
+        {
+          id: "Document",
+          label: "Document",
+          icon: (
+            <MaterialCommunityIcons
+              name="file-document-outline"
+              size={24}
+              color="#1E282D"
+            />
+          ),
+        },
+        {
+          id: "Chat",
+          label: "Chat",
+          icon: (
+            <MaterialCommunityIcons
+              name="chat-outline"
+              size={24}
+              color="#1E282D"
+            />
+          ),
+        },
+      ]
       : [
-          {
-            id: "Plan",
-            label: "Plan",
-            icon: (
-              <MaterialCommunityIcons name="target" size={24} color="#1E282D" />
-            ),
-          },
-          {
-            id: "Document",
-            label: "Document",
-            icon: (
-              <MaterialCommunityIcons
-                name="file-document-outline"
-                size={24}
-                color="#1E282D"
-              />
-            ),
-          },
-          {
-            id: "Session",
-            label: "Session",
-            icon: (
-              <MaterialCommunityIcons
-                name="timer-outline"
-                size={24}
-                color="#1E282D"
-              />
-            ),
-          },
-          {
-            id: "Statistic",
-            label: "Statistic",
-            icon: (
-              <MaterialCommunityIcons
-                name="chart-box-outline"
-                size={24}
-                color="#1E282D"
-              />
-            ),
-          },
-        ];
+        {
+          id: "Plan",
+          label: "Plan",
+          icon: (
+            <MaterialCommunityIcons name="target" size={24} color="#1E282D" />
+          ),
+        },
+        {
+          id: "Document",
+          label: "Document",
+          icon: (
+            <MaterialCommunityIcons
+              name="file-document-outline"
+              size={24}
+              color="#1E282D"
+            />
+          ),
+        },
+        {
+          id: "Session",
+          label: "Session",
+          icon: (
+            <MaterialCommunityIcons
+              name="timer-outline"
+              size={24}
+              color="#1E282D"
+            />
+          ),
+        },
+        {
+          id: "Statistic",
+          label: "Statistic",
+          icon: (
+            <MaterialCommunityIcons
+              name="chart-box-outline"
+              size={24}
+              color="#1E282D"
+            />
+          ),
+        },
+      ];
 
   return (
     <View style={styles.sidebar}>
@@ -127,7 +127,12 @@ export default function Sidebar({ onClose }: SidebarProps) {
             {item.icon}
             <Text style={[styles.menuText]}>{item.label}</Text>
           </Pressable>
+
         ))}
+        <Pressable style={styles.closeButton} onPress={onClose}>
+          <Ionicons name="close-circle-outline" size={24} color="white" />
+          <Text style={[styles.menuText]}>Closed</Text>
+        </Pressable>
       </View>
     </View>
   );

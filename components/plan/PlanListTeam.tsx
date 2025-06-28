@@ -4,41 +4,19 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import PlanItem from "./PlanItem";
 
 interface Plan {
-  id: number;
+  id: string;
   progress: number;
   planName: string;
   deadline: string;
-  isAdmin: boolean; // Thêm thuộc tính để xác định kế hoạch thuộc admin
+  isAdmin: boolean;
 }
 
 interface PlanListProps {
   onPlanPress: (planName: string) => void;
+  plans?: Plan[];
 }
 
-export default function PlanList({ onPlanPress }: PlanListProps) {
-  const plans: Plan[] = [
-    {
-      id: 1,
-      progress: 78.6,
-      planName: "PLAN01",
-      deadline: "2025-06-25 11:20:00",
-      isAdmin: true,
-    },
-    {
-      id: 2,
-      progress: 65.4,
-      planName: "PLAN02",
-      deadline: "2025-06-25 11:20:00",
-      isAdmin: false,
-    },
-    {
-      id: 3,
-      progress: 50.0,
-      planName: "PLAN03",
-      deadline: "2025-06-25 11:20:00",
-      isAdmin: true,
-    },
-  ];
+export default function PlanList({ onPlanPress, plans }: PlanListProps) {
 
   return (
     <View style={styles.container}>
@@ -46,7 +24,7 @@ export default function PlanList({ onPlanPress }: PlanListProps) {
         <MaterialCommunityIcons name="target" size={30} color="#7AB2D3" />
         <Text style={styles.headerText}>Plans</Text>
       </View>
-      {plans.map((item) => (
+      {plans?.map((item) => (
         <Pressable
           key={item.id}
           onPress={() => onPlanPress(item.planName)}
