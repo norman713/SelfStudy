@@ -74,7 +74,7 @@ function computeNotifyBefore(endAt: Date, notifyDate: Date): string {
 }
 
 export default function PlanScreen() {
-  const [tasks, setTasks] = useState<Task[]>();
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [planInfo, setPlanInfo] = useState<Plan>();
   const [newTask, setNewTask] = useState("");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -147,21 +147,28 @@ export default function PlanScreen() {
       return;
     }
 
-    userApi.updatePlan(id, {
-      name: planInfo.name,
-      description: planInfo.description,
-      startAt: new Date(planInfo.startAt).toISOString(),
-      endAt: new Date(planInfo.endAt).toISOString(),
-    }).finally(() => {
-      // Mock save: log to console
-      console.log("Saved plan:", planInfo);
-      console.log("Tasks:", tasks);
+    Promise.all([
+      userApi.updateTasksStatus(id, tasks.map((task) => ({
+        id: task.id,
+        isCompleted: task.status === "COMPLETED",
+      }))),
+      userApi.updatePlan(id, {
+        name: planInfo.name,
+        description: planInfo.description,
+        startAt: new Date(planInfo.startAt).toISOString(),
+        endAt: new Date(planInfo.endAt).toISOString(),
+      }),
+    ])
+      .finally(() => {
+        // Mock save: log to console
+        console.log("Saved plan:", planInfo);
+        console.log("Tasks:", tasks);
 
-      router.push({
-        pathname: "/Me/Plan",
-        params: { reloadId: Date.now().toString() },
-      });
-    })
+        router.push({
+          pathname: "/Me/Plan",
+          params: { reloadId: Date.now().toString() },
+        });
+      })
   };
 
 
@@ -185,8 +192,7 @@ export default function PlanScreen() {
           {tasks && tasks.map((item) => (
             <View key={item.id} style={styles.taskContainer}>
               <Checkbox
-                // isChecked={item.status === "COMPLETED"}
-                isChecked={false}
+                isChecked={item.status === "COMPLETED"}
                 onToggle={(checked) => toggleTaskCompletion(item.id, checked)}
               />
 

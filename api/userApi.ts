@@ -43,7 +43,7 @@ const userApi = {
     console.log(body);
     return axiosInstance.post(url, body);
   },
-  
+
   register(username: string, email: string, password: string, dateOfBirth: string, gender: string, code: string) {
     const url = "/auth/register";
     const body = { username, email, password, dateOfBirth, gender, verificationCode: code };
@@ -108,6 +108,12 @@ const userApi = {
   addTasks(planId: string, tasks: string[]) {
     return axiosInstance.post(`/tasks/personal`, {
       planId, tasks
+    });
+  },
+  updateTasksStatus(planId: string, tasks: { id: string, isCompleted: boolean }[]) {
+    return axiosInstance.patch(`/tasks/status`, {
+      planId: planId,
+      tasks: tasks
     });
   }
 }
