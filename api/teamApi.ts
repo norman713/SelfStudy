@@ -92,9 +92,12 @@ const teamApi = {
   updatePlan(planId: string, planData: {
     name: string,
     description: string,
-    startAt: string,
-    endAt: string,
-  }) {
+    // startAt: string,
+    // endAt: string,
+
+  }) 
+  {
+    console.log("Plan da chinh sua lai:", planId, planData)
     return axiosInstance.patch(`/plans/${planId}`, planData);
   },
   deleteTasks(planId: string, taskIds: string[]) {
@@ -121,7 +124,6 @@ const teamApi = {
 
   },
     updateTasksAssignee(planId: string, tasks: { id: string, assigneeId: string }[]) {
-    console.log("du lieu dau vao:", planId, tasks)
     return axiosInstance.patch(`/tasks/assignee`, {
       planId: planId,
       task: tasks

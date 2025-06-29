@@ -280,8 +280,8 @@ export default function PlanScreen() {
       teamApi.updatePlan(id, {
         name: planInfo.name,
         description: planInfo.description,
-        startAt: new Date(planInfo.startAt).toISOString(),
-        endAt: new Date(planInfo.endAt).toISOString(),
+        // startAt: new Date(planInfo.startAt).toISOString(),
+        // endAt: new Date(planInfo.endAt).toISOString(),
       }),
       teamApi.updateTasksStatus(
         id,
