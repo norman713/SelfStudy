@@ -1,6 +1,4 @@
 import React, { createContext, useState, useContext, ReactNode } from "react";
-
-// Định nghĩa kiểu dữ liệu cho TeamContext
 interface TeamContextProps {
   role: string;
   setRole: (value: string) => void;
@@ -10,7 +8,6 @@ interface TeamContextProps {
   getId: () => string;
 }
 
-// Định nghĩa kiểu dữ liệu cho props của TeamProvider, bao gồm cả children
 interface TeamProviderProps {
   children: ReactNode;
 }
@@ -21,7 +18,7 @@ const TeamContext = createContext<TeamContextProps | undefined>(undefined);
 // Provider cho phép các component con sử dụng context
 export const TeamProvider = ({ children }: TeamProviderProps) => {
   const [role, setRole] = useState<string>(""); // Khởi tạo state role
-  const [id, setId] = useState<string>("");     // Khởi tạo state id
+  const [id, setId] = useState<string>(""); // Khởi tạo state id
 
   const getRole = () => role;
   const getId = () => id;

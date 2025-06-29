@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+
 import { Calendar, DateData } from "react-native-calendars";
 import { Text, StyleSheet, View, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -12,10 +13,8 @@ import { Picker } from "@react-native-picker/picker";
 import teamApi from "@/api/teamApi";
 import { useTeamContext } from "@/context/TeamContext";
 
-// helper lấy ngày hôm nay dưới dạng "YYYY-MM-DD"
-const getTodayString = () => new Date().toISOString().split("T")[0];
 
-// Mock data kế hoạch
+const getTodayString = () => new Date().toISOString().split("T")[0];
 type MockPlan = {
   planName: string;
   date: string; // "YYYY-MM-DD"
@@ -34,17 +33,16 @@ export default function Plan() {
   const [markDates, setMarkDates] = useState<string[]>([]);
   const currentDate = new Date();
   const [selectedDate, setSelectedDate] = useState<string>(getTodayString());
-
-  const [month, setMonth] = useState<number>(currentDate.getMonth() + 1); // Tháng trong JS bắt đầu từ 0
+  const [month, setMonth] = useState<number>(currentDate.getMonth() + 1); 
   const [year, setYear] = useState<number>(currentDate.getFullYear());
   const { getId: getTeamId } = useTeamContext();
   const [plans, setPlans] = useState<Plan[]>([]);
+
   if (!fontsLoaded) return null;
 
   const handlePlanPress = (planId: string) => {
     router.push(`/Team/PlanDetail?planId=${encodeURIComponent(planId)}`);
   };
-
   useEffect(() => {
     teamApi.listPlansByDate(selectedDate, getTeamId()).then((response) => {
       const plansData = response as unknown as {
@@ -101,11 +99,11 @@ export default function Plan() {
       <Header />
 
       <ScrollView contentContainerStyle={styles.scrollViewContainer}>
+        <Text>Team ID: {teamId}</Text>
         <Text style={styles.title}>
           Hey, you have <Text style={styles.highlightText}>{plans.length}</Text>{" "}
           plans today!
         </Text>
-
         <View style={styles.calendarContainer}>
           <Calendar
             current={selectedDate}
@@ -125,7 +123,6 @@ export default function Plan() {
             }}
           />
         </View>
-
         <View style={styles.planListContainer}>
           <PlanList plans={plans} onPlanPress={handlePlanPress} />
         </View>

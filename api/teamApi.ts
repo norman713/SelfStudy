@@ -55,7 +55,6 @@ const teamApi = {
       }
     });
   },
-
   listPlansByDate(date: string, teamId: string) {
     return axiosInstance.get(`/plans/team/date`, {
       params: {
