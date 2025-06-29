@@ -16,6 +16,7 @@ import Sidebar from "../components/navigation/SideBar";
 import { usePathname } from "expo-router";
 import { useNavigationContext } from "@/context/NavigationContext";
 import { useUser } from "../context/UserContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Header({ showMenu = true, onLogout = () => {} }) {
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
@@ -72,6 +73,8 @@ export default function Header({ showMenu = true, onLogout = () => {} }) {
       router.push("/Me/Profile");
     } else if (option === "Log out") {
       onLogout();
+
+      AsyncStorage.clear();
       router.push("/Authen/Login");
     }
   };

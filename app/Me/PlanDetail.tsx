@@ -26,7 +26,7 @@ interface Reminder {
 interface Task {
   id: string;
   name: string;
-  status: "INCOMPLETE" | "COMPLETED";
+  completed: boolean
   assigneeId?: string;
   assigneeAvatarUrl?: string;
 }
@@ -74,7 +74,8 @@ function computeNotifyBefore(endAt: Date, notifyDate: Date): string {
 }
 
 export default function PlanScreen() {
-  const [tasks, setTasks] = useState<Task[]>();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [deletedTaskIds, setDeletedTaskIds] = useState<string[]>([]);
   const [planInfo, setPlanInfo] = useState<Plan>();
   const [newTask, setNewTask] = useState("");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -109,17 +110,16 @@ export default function PlanScreen() {
     setTasks((prev) =>
       prev?.map((t) =>
         t.id === taskId
-          ? { ...t, status: isChecked ? "COMPLETED" : "INCOMPLETE" }
+          ? { ...t, completed: isChecked }
           : t
       )
     );
   };
 
   const handleDeleteTask = (taskId: string) => {
-    userApi.deleteTasks(id, [taskId]).then(() => {
+    setTasks((prev) => prev?.filter((t) => t.id !== taskId));
+    setDeletedTaskIds((prev) => [...prev, taskId]);
 
-      setTasks((prev) => prev?.filter((t) => t.id !== taskId));
-    })
   };
 
   const startEditingTask = (taskId: string, name: string) => {
@@ -147,21 +147,29 @@ export default function PlanScreen() {
       return;
     }
 
-    userApi.updatePlan(id, {
-      name: planInfo.name,
-      description: planInfo.description,
-      startAt: new Date(planInfo.startAt).toISOString(),
-      endAt: new Date(planInfo.endAt).toISOString(),
-    }).finally(() => {
-      // Mock save: log to console
-      console.log("Saved plan:", planInfo);
-      console.log("Tasks:", tasks);
+    Promise.all([
+      userApi.updateTasksStatus(id, tasks.map((task) => ({
+        id: task.id,
+        isCompleted: task.completed,
+      }))),
+      userApi.updatePlan(id, {
+        name: planInfo.name,
+        description: planInfo.description,
+        startAt: new Date(planInfo.startAt).toISOString(),
+        endAt: new Date(planInfo.endAt).toISOString(),
+      }),
+      userApi.deleteTasks(id, deletedTaskIds),
+    ])
+      .finally(() => {
+        // Mock save: log to console
+        console.log("Saved plan:", planInfo);
+        console.log("Tasks:", tasks);
 
-      router.push({
-        pathname: "/Me/Plan",
-        params: { reloadId: Date.now().toString() },
-      });
-    })
+        router.push({
+          pathname: "/Me/Plan",
+          params: { reloadId: Date.now().toString() },
+        });
+      })
   };
 
 
@@ -185,8 +193,7 @@ export default function PlanScreen() {
           {tasks && tasks.map((item) => (
             <View key={item.id} style={styles.taskContainer}>
               <Checkbox
-                // isChecked={item.status === "COMPLETED"}
-                isChecked={false}
+                isChecked={item.completed}
                 onToggle={(checked) => toggleTaskCompletion(item.id, checked)}
               />
 

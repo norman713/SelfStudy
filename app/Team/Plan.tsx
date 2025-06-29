@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Calendar } from "react-native-calendars";
+
+import { Calendar, DateData } from "react-native-calendars";
 import { Text, StyleSheet, View, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import useCustomFonts from "@/hooks/useCustomFonts";
@@ -9,70 +10,89 @@ import { router, useNavigation } from "expo-router";
 import PlanList from "@/components/plan/PlanListTeam";
 import { Colors } from "@/constants/Colors";
 import { Picker } from "@react-native-picker/picker";
+import teamApi from "@/api/teamApi";
 import { useTeamContext } from "@/context/TeamContext";
 
-// helper lấy ngày hôm nay dưới dạng "YYYY-MM-DD"
-const getTodayString = () => new Date().toISOString().split("T")[0];
 
-// Mock data kế hoạch
+const getTodayString = () => new Date().toISOString().split("T")[0];
 type MockPlan = {
   planName: string;
   date: string; // "YYYY-MM-DD"
 };
 
-const mockPlans: MockPlan[] = [
-  { planName: "Team meeting", date: "2025-06-23" },
-  { planName: "Submit report", date: "2025-06-23" },
-  { planName: "Design session", date: "2025-06-24" },
-  { planName: "Code review", date: "2025-06-23" },
-  { planName: "Client call", date: "2025-06-25" },
-];
+interface Plan {
+  id: string;
+  progress: number;
+  planName: string;
+  deadline: string;
+  isAssigned: boolean;
+}
 
-const mockGroups = [
-  { id: "g1", name: "Group A" },
-  { id: "g2", name: "Group B" },
-  { id: "g3", name: "Group C" },
-];
 export default function Plan() {
   const { fontsLoaded } = useCustomFonts();
+  const [markDates, setMarkDates] = useState<string[]>([]);
+  const currentDate = new Date();
   const [selectedDate, setSelectedDate] = useState<string>(getTodayString());
-  const navigation = useNavigation();
-  const { setId, getId } = useTeamContext();
-  const [teamId, setTeamId] = useState<string | null>(null);
+  const [month, setMonth] = useState<number>(currentDate.getMonth() + 1); 
+  const [year, setYear] = useState<number>(currentDate.getFullYear());
+  const { getId: getTeamId } = useTeamContext();
+  const [plans, setPlans] = useState<Plan[]>([]);
 
-  const [groups] = useState(mockGroups);
-  const [selectedGroup, setSelectedGroup] = useState(groups[0].id);
-
-  // Lấy teamId từ context
-  useEffect(() => {
-    const id = getId();
-    setTeamId(id);
-  }, [getId()]);
   if (!fontsLoaded) return null;
 
-  const handlePlanPress = (planName: string) => {
-    router.push(`/Team/PlanDetail?planName=${encodeURIComponent(planName)}`);
+  const handlePlanPress = (planId: string) => {
+    router.push(`/Team/PlanDetail?planId=${encodeURIComponent(planId)}`);
   };
-
-  // Lọc ra plans của ngày đang chọn
-  const plansForDate = mockPlans.filter((p) => p.date === selectedDate);
-
-  const markedDates = useMemo(() => {
-    const marks: Record<string, any> = {};
-    // đánh dấu từng ngày có ít nhất 1 plan
-    mockPlans.forEach(({ date }) => {
-      if (!marks[date]) {
-        marks[date] = { marked: true, dotColor: Colors.red };
-      }
+  useEffect(() => {
+    teamApi.listPlansByDate(selectedDate, getTeamId()).then((response) => {
+      const plansData = response as unknown as {
+        id: string;
+        name: string;
+        endAt: string;
+        progress: number;
+        assigned: boolean;
+      }[];
+      setPlans(
+        plansData.map((plan) => ({
+          id: plan.id,
+          progress: plan.progress * 100,
+          planName: plan.name,
+          deadline: plan.endAt,
+          isAssigned: plan.assigned,
+        }))
+      );
     });
-    marks[selectedDate] = {
-      ...(marks[selectedDate] || {}),
-      selected: true,
-      selectedColor: Colors.primary,
-      selectedTextColor: "#fff",
-    };
-    return marks;
+
+    teamApi.getPlansMarkInMonth(getTeamId(), month, year).then((response) => {
+      const markData = response as unknown as string[];
+
+      console.log("Marked Dates aaa:", markData);
+      setMarkDates(markData);
+    });
   }, [selectedDate]);
+
+  const getMarkedDates = () => {
+    const markedDates: Record<string, any> = {};
+
+    markDates.forEach((date) => {
+      markedDates[date] = {
+        marked: true,
+        dotColor: Colors.red,
+      };
+    });
+
+    if (selectedDate) {
+      markedDates[selectedDate] = {
+        ...(markedDates[selectedDate] || {}),
+        selected: true,
+        selectedColor: Colors.primary,
+        selectedTextColor: "#FFFFFF",
+      };
+    }
+    console.log("Marked Dates:", markedDates, markDates);
+
+    return markedDates;
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -81,14 +101,17 @@ export default function Plan() {
       <ScrollView contentContainerStyle={styles.scrollViewContainer}>
         <Text>Team ID: {teamId}</Text>
         <Text style={styles.title}>
-          Hey, you have{" "}
-          <Text style={styles.highlightText}>{plansForDate.length}</Text> plans
-          today!
+          Hey, you have <Text style={styles.highlightText}>{plans.length}</Text>{" "}
+          plans today!
         </Text>
         <View style={styles.calendarContainer}>
           <Calendar
             current={selectedDate}
-            markedDates={markedDates}
+            markedDates={getMarkedDates()}
+            onMonthChange={(date: DateData) => {
+              setMonth(date.month);
+              setYear(date.year);
+            }}
             onDayPress={(day: { dateString: React.SetStateAction<string> }) =>
               setSelectedDate(day.dateString)
             }
@@ -101,7 +124,7 @@ export default function Plan() {
           />
         </View>
         <View style={styles.planListContainer}>
-          <PlanList plans={plansForDate} onPlanPress={handlePlanPress} />
+          <PlanList plans={plans} onPlanPress={handlePlanPress} />
         </View>
       </ScrollView>
 
@@ -120,7 +143,6 @@ const styles = StyleSheet.create({
   },
   scrollViewContainer: {
     flexGrow: 1,
-    justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,
     gap: 20,
@@ -149,7 +171,7 @@ const styles = StyleSheet.create({
   planListContainer: {
     width: "100%",
     justifyContent: "center",
-    alignItems: "center",
+    alignItems: "flex-start",
   },
   highlightText: {
     color: Colors.primary,

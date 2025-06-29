@@ -84,18 +84,18 @@ const Noti: React.FC = () => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const response = await notificationApi.get(10, "");
+        const response = await notificationApi.get(10, "") as { notifications?: Notification[] };
 
         const data: Notification[] = Array.isArray(response.notifications)
           ? response.notifications.map((item: any) => ({
-              id: item.id,
-              title: item.title,
-              createdAt: item.createdAt,
-              content: item.content,
-              subject: item.subject,
-              subjectId: item.subjectId,
-              read: item.read,
-            }))
+            id: item.id,
+            title: item.title,
+            createdAt: item.createdAt,
+            content: item.content,
+            subject: item.subject,
+            subjectId: item.subjectId,
+            read: item.read,
+          }))
           : [];
         setNotifications(data);
       } catch (error) {
@@ -109,17 +109,17 @@ const Noti: React.FC = () => {
   useEffect(() => {
     const fetchInvitations = async () => {
       try {
-        const response = await invitationApi.get(10, "");
+        const response = await invitationApi.get(10, "") as { invitations?: Invitation[] };
 
         const data: Invitation[] = Array.isArray(response.invitations)
           ? response.invitations.map((item: any) => ({
-              id: item.id,
-              inviterName: item.inviterName,
-              inviterAvatarUrl: item.inviterAvatarUrl,
-              teamId: item.teamId,
-              teamName: item.teamName,
-              invitedAt: item.invitedAt,
-            }))
+            id: item.id,
+            inviterName: item.inviterName,
+            inviterAvatarUrl: item.inviterAvatarUrl,
+            teamId: item.teamId,
+            teamName: item.teamName,
+            invitedAt: item.invitedAt,
+          }))
           : [];
         setInvitations(data);
       } catch (error) {
@@ -258,6 +258,7 @@ const Noti: React.FC = () => {
             <>
               {notifications.map((noti, index) => (
                 <Notification
+                  key={noti.id}
                   id={noti.id}
                   title={noti.title}
                   createdAt={noti.createdAt}
@@ -280,6 +281,7 @@ const Noti: React.FC = () => {
                   invitedAt={inv.invitedAt}
                   teamName={inv.teamName}
                   teamId={inv.teamId}
+                  onReply={() => { }}
                 />
               ))}
             </>

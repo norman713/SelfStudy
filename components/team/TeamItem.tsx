@@ -35,7 +35,6 @@ export default function TeamItem({
       ]}
     >
       <TouchableOpacity onPress={onPress}>
-        {" "}
         {/* Thêm onPress vào đây, nếu có */}
         <View style={styles.container}>
           {/* Left: Avatar + Title */}
@@ -52,7 +51,7 @@ export default function TeamItem({
               activeOpacity={0.8}
             >
               <Image
-                source={imageSource}
+                src={imageSource}
                 style={styles.adminIcon}
                 resizeMode="contain"
               />
